@@ -1,0 +1,72 @@
+{
+  "name": "@token-gateway/desktop",
+  "version": "0.0.0",
+  "description": "Desktop GUI for API Proxy Engine",
+  "homepage": "https://github.com/luozhouyang/token-gateway/tree/main/apps/desktop#readme",
+  "bugs": {
+    "url": "https://github.com/luozhouyang/token-gateway/issues"
+  },
+  "license": "MIT",
+  "author": "Luo Zhou Yang",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luozhouyang/token-gateway.git",
+    "directory": "apps/desktop"
+  },
+  "type": "module",
+  "main": "dist/main/main.js",
+  "scripts": {
+    "dev": "vp run electron#dev",
+    "build": "vp run electron#build",
+    "preview": "vp run electron#preview",
+    "electron:dev": "electron .",
+    "electron:build": "electron-builder",
+    "check": "vp check"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@typescript/native-preview": "7.0.0-dev.20260316.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^34.0.0",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.9.3",
+    "vite": "^6.2.0",
+    "vite-plus": "^0.1.11"
+  },
+  "build": {
+    "appId": "com.token-gateway.desktop",
+    "productName": "Token Gateway Desktop",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    }
+  }
+}
