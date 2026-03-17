@@ -128,8 +128,6 @@ export interface PluginResponse {
   consumerId: string | null;
   config: Record<string, unknown> | null;
   enabled: boolean;
-  runOn: string;
-  ordering: Record<string, unknown> | null;
   tags: string[];
   createdAt: string;
   updatedAt: string;

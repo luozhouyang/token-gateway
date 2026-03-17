@@ -108,8 +108,6 @@ export const createPluginSchema = z.object({
   consumerId: z.string().optional().nullable(),
   config: z.record(z.string(), z.unknown()).optional().nullable(),
   enabled: z.boolean().optional(),
-  runOn: z.enum(["first", "second", "pre", "post"]).optional(),
-  ordering: z.record(z.string(), z.unknown()).optional(),
   tags: z.array(z.string()).optional(),
 });
 

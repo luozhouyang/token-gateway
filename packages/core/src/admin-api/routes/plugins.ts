@@ -62,8 +62,6 @@ export function createPluginsRoutes(db: DatabaseService) {
       consumerId: body.consumerId ?? null,
       config: body.config ?? null,
       enabled: body.enabled ?? true,
-      runOn: body.runOn ?? "first",
-      ordering: body.ordering ?? null,
       tags: body.tags ?? [],
     });
 
@@ -99,8 +97,6 @@ export function createPluginsRoutes(db: DatabaseService) {
       consumerId: body.consumerId ?? null,
       config: body.config ?? null,
       enabled: body.enabled,
-      runOn: body.runOn,
-      ordering: body.ordering ?? null,
       tags: body.tags ?? (plugin.tags as string[]),
     });
 

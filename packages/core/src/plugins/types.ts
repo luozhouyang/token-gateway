@@ -1,6 +1,22 @@
 // Plugin system type definitions
 
-import type { PluginBinding, Consumer, Route, Service } from "../entities/types.js";
+import type { Consumer, Route, Service } from "../entities/types.js";
+
+/**
+ * Plugin instance - a bound plugin with its configuration
+ * Represents a single plugin configuration (one row from the plugins table)
+ */
+export interface PluginInstance {
+  id: string;
+  name: string;
+  serviceId?: string | null;
+  routeId?: string | null;
+  consumerId?: string | null;
+  config: Record<string, unknown>;
+  enabled: boolean;
+  tags?: string[];
+  priority?: number; // Runtime priority, can be overridden from binding
+}
 
 /**
  * Plugin execution context
@@ -18,8 +34,8 @@ export interface PluginContext {
   service?: Service;
   consumer?: Consumer;
 
-  // Plugin info
-  plugin: PluginBinding;
+  // Plugin instance info
+  plugin: PluginInstance;
   config: Record<string, unknown>;
 
   // State

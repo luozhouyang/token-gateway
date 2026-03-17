@@ -40,7 +40,6 @@ describe("PluginBindingRepository", () => {
       name: "rate-limiting",
       config: { second: 10 },
       enabled: true,
-      runOn: "first",
       tags: ["test"],
     });
 
@@ -69,7 +68,6 @@ describe("PluginBindingRepository", () => {
       serviceId: service.id,
       config: { second: 10 },
       enabled: true,
-      runOn: "first",
       tags: [] as string[],
     });
 
@@ -81,7 +79,6 @@ describe("PluginBindingRepository", () => {
       name: "test-plugin",
       config: { key: "value" },
       enabled: true,
-      runOn: "first",
       tags: [] as string[],
     });
 
@@ -111,7 +108,6 @@ describe("PluginBindingRepository", () => {
       serviceId: service.id,
       config: {},
       enabled: true,
-      runOn: "first",
       tags: [] as string[],
     });
     await pluginRepo.create({
@@ -119,14 +115,12 @@ describe("PluginBindingRepository", () => {
       serviceId: service.id,
       config: {},
       enabled: true,
-      runOn: "first",
       tags: [] as string[],
     });
     await pluginRepo.create({
       name: "plugin-3",
       config: {},
       enabled: true,
-      runOn: "first",
       tags: [] as string[],
     });
 
@@ -166,7 +160,6 @@ describe("PluginBindingRepository", () => {
       routeId: route.id,
       config: {},
       enabled: true,
-      runOn: "first",
       tags: [] as string[],
     });
     await pluginRepo.create({
@@ -174,7 +167,6 @@ describe("PluginBindingRepository", () => {
       routeId: route.id,
       config: {},
       enabled: true,
-      runOn: "first",
       tags: [] as string[],
     });
 
@@ -196,7 +188,6 @@ describe("PluginBindingRepository", () => {
       consumerId: consumer.id,
       config: {},
       enabled: true,
-      runOn: "first",
       tags: [] as string[],
     });
     await pluginRepo.create({
@@ -204,7 +195,6 @@ describe("PluginBindingRepository", () => {
       consumerId: consumer.id,
       config: {},
       enabled: true,
-      runOn: "first",
       tags: [] as string[],
     });
 
@@ -219,7 +209,6 @@ describe("PluginBindingRepository", () => {
       name: "test-plugin",
       config: { key: "value" },
       enabled: true,
-      runOn: "first",
       tags: [] as string[],
     });
 
@@ -239,7 +228,6 @@ describe("PluginBindingRepository", () => {
       name: "test-plugin",
       config: {},
       enabled: true,
-      runOn: "first",
       tags: [] as string[],
     });
 

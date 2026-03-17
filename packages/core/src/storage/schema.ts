@@ -152,8 +152,6 @@ export const plugins = sqliteTable(
     consumerId: text("consumer_id").references(() => consumers.id, { onDelete: "cascade" }),
     config: text("config", { mode: "json" }).$type<Record<string, unknown>>(),
     enabled: integer("enabled", { mode: "boolean" }).default(true),
-    runOn: text("run_on").default("first"),
-    ordering: text("ordering", { mode: "json" }).$type<Record<string, unknown>>(),
     tags: text("tags", { mode: "json" })
       .$type<string[]>()
       .$defaultFn(() => []),

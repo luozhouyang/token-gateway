@@ -6,7 +6,7 @@ import { runMigrations } from "../storage/migrations.js";
 import { join } from "node:path";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import type { PluginDefinition, PluginContext } from "./types.js";
+import type { PluginDefinition, PluginContext, PluginInstance } from "./types.js";
 import { plugins } from "../storage/schema.js";
 
 describe("PluginLoader", () => {
@@ -107,9 +107,9 @@ describe("PluginManager", () => {
     manager.registerPlugin(mockPlugin);
 
     // Plugin should be loadable
-    const loaded = await (manager as any).loadPlugin("custom-plugin");
+    const loaded = await (manager as any).loadPluginDef("custom-plugin");
     expect(loaded).toBeDefined();
-    expect(loaded.name).toBe("custom-plugin");
+    expect(loaded?.name).toBe("custom-plugin");
   });
 
   test("unregisters custom plugin", async () => {
@@ -125,7 +125,7 @@ describe("PluginManager", () => {
     manager.unregisterPlugin("temp-plugin");
 
     // Plugin should not be loadable
-    const loaded = await (manager as any).loadPlugin("temp-plugin");
+    const loaded = await (manager as any).loadPluginDef("temp-plugin");
     expect(loaded).toBeNull();
   });
 
@@ -144,31 +144,30 @@ describe("PluginManager", () => {
 
     manager.registerPlugin(mockPlugin);
 
+    const mockInstance: PluginInstance = {
+      id: "1",
+      name: "test-plugin",
+      config: {},
+      enabled: true,
+      tags: [],
+      consumerId: null,
+      routeId: null,
+      serviceId: null,
+      priority: 50,
+    };
+
     const mockContext: PluginContext = {
       request: new Request("http://example.com"),
       url: new URL("http://example.com"),
       method: "GET",
       headers: new Headers(),
-      plugin: {
-        id: "1",
-        name: "test-plugin",
-        config: {},
-        enabled: true,
-        runOn: "first",
-        tags: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        consumerId: null,
-        ordering: null,
-        routeId: null,
-        serviceId: null,
-      },
+      plugin: mockInstance,
       config: {},
       state: new Map(),
       waitUntil: () => {},
     };
 
-    await manager.executePlugins("request", mockContext);
+    await manager.executePlugin("request", mockInstance, mockContext);
     expect(executed).toBe(true);
   });
 
@@ -196,7 +195,7 @@ describe("PluginManager", () => {
       },
     });
 
-    // Use executeAllPlugins which properly sorts by priority
+    // Use executeAllPluginInstances which properly sorts by priority
     const mockContext: PluginContext = {
       request: new Request("http://example.com"),
       url: new URL("http://example.com"),
@@ -207,26 +206,35 @@ describe("PluginManager", () => {
         name: "test-plugin",
         config: {},
         enabled: true,
-        runOn: "first",
         tags: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
         consumerId: null,
-        ordering: null,
         routeId: null,
         serviceId: null,
+        priority: 10,
       },
       config: {},
       state: new Map(),
       waitUntil: () => {},
     };
 
-    const pluginBindings = [
-      { name: "test-plugin", config: {} },
-      { name: "test-plugin-2", config: {} },
+    const pluginInstances: PluginInstance[] = [
+      {
+        id: "1",
+        name: "test-plugin",
+        config: {},
+        enabled: true,
+        priority: 10,
+      },
+      {
+        id: "2",
+        name: "test-plugin-2",
+        config: {},
+        enabled: true,
+        priority: 20,
+      },
     ];
 
-    await manager.executeAllPlugins("request", mockContext, pluginBindings);
+    await manager.executeAllPluginInstances("request", pluginInstances, mockContext);
 
     // Higher priority runs first
     expect(executionOrder).toEqual(["test-plugin-2", "test-plugin"]);
@@ -263,27 +271,41 @@ describe("PluginManager", () => {
         name: "stopper",
         config: {},
         enabled: true,
-        runOn: "first",
         tags: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
         consumerId: null,
-        ordering: null,
         routeId: null,
         serviceId: null,
+        priority: 20,
       },
       config: {},
       state: new Map(),
       waitUntil: () => {},
     };
 
-    const result = await manager.executePlugins("request", mockContext);
+    const pluginInstances: PluginInstance[] = [
+      {
+        id: "1",
+        name: "stopper",
+        config: {},
+        enabled: true,
+        priority: 20,
+      },
+      {
+        id: "2",
+        name: "should-not-run",
+        config: {},
+        enabled: true,
+        priority: 10,
+      },
+    ];
+
+    const result = await manager.executeAllPluginInstances("request", pluginInstances, mockContext);
 
     expect(result.stopped).toBe(true);
     expect(executionOrder).toHaveLength(0);
   });
 
-  test("executeAllPlugins runs all plugins in order", async () => {
+  test("executeAllPluginInstances runs all plugins in order", async () => {
     const executionOrder: string[] = [];
 
     manager.registerPlugin({
@@ -316,26 +338,35 @@ describe("PluginManager", () => {
         name: "cors",
         config: {},
         enabled: true,
-        runOn: "first",
         tags: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
         consumerId: null,
-        ordering: null,
         routeId: null,
         serviceId: null,
+        priority: 100,
       },
       config: {},
       state: new Map(),
       waitUntil: () => {},
     };
 
-    const pluginBindings = [
-      { name: "cors", config: {} },
-      { name: "logger", config: {} },
+    const pluginInstances: PluginInstance[] = [
+      {
+        id: "1",
+        name: "cors",
+        config: {},
+        enabled: true,
+        priority: 100,
+      },
+      {
+        id: "2",
+        name: "logger",
+        config: {},
+        enabled: true,
+        priority: 90,
+      },
     ];
 
-    await manager.executeAllPlugins("request", mockContext, pluginBindings);
+    await manager.executeAllPluginInstances("request", pluginInstances, mockContext);
 
     expect(executionOrder).toEqual(["cors", "logger"]);
   });
@@ -361,21 +392,26 @@ describe("PluginManager", () => {
         name: "error-plugin",
         config: {},
         enabled: true,
-        runOn: "first",
         tags: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
         consumerId: null,
-        ordering: null,
         routeId: null,
         serviceId: null,
+        priority: 50,
       },
       config: {},
       state: new Map(),
       waitUntil: () => {},
     };
 
-    const result = await manager.executePlugins("request", mockContext);
+    const pluginInstance: PluginInstance = {
+      id: "1",
+      name: "error-plugin",
+      config: {},
+      enabled: true,
+      priority: 50,
+    };
+
+    const result = await manager.executePlugin("request", pluginInstance, mockContext);
 
     expect(result.stopped).toBe(true);
     expect(result.error).toBeDefined();
@@ -402,7 +438,7 @@ describe("PluginManager with database", () => {
     rmSync(tempDir, { recursive: true, force: true });
   });
 
-  test("reads plugins from database", async () => {
+  test("reads global plugins from database", async () => {
     // Insert a plugin directly into database
     const dbClient = db.getDrizzleDb();
     dbClient
@@ -413,14 +449,11 @@ describe("PluginManager with database", () => {
         config: { origin: "*" },
         enabled: true,
         tags: [],
-        runOn: "first",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
       })
       .run();
 
     // Get global plugins
-    const loadedPlugins = await manager.getGlobalPlugins();
+    const loadedPlugins = await manager.getGlobalPluginInstances();
     expect(loadedPlugins).toHaveLength(1);
     expect(loadedPlugins[0].name).toBe("cors");
   });
@@ -437,9 +470,6 @@ describe("PluginManager with database", () => {
         config: {},
         enabled: true,
         tags: [],
-        runOn: "first",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
       })
       .run();
 
@@ -452,13 +482,10 @@ describe("PluginManager with database", () => {
         config: {},
         enabled: false,
         tags: [],
-        runOn: "first",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
       })
       .run();
 
-    const globalPlugins = await manager.getGlobalPlugins();
+    const globalPlugins = await manager.getGlobalPluginInstances();
     expect(globalPlugins).toHaveLength(1);
     expect(globalPlugins[0].name).toBe("cors");
   });

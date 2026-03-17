@@ -12,12 +12,14 @@ import { createConsumersRoutes } from "./routes/consumers.js";
 import { createCredentialsRoutes } from "./routes/credentials.js";
 import { createPluginsRoutes } from "./routes/plugins.js";
 import { DatabaseService } from "../storage/database.js";
+import { PluginManager } from "../plugins/plugin-manager.js";
 
 export interface AdminApiOptions {
   db: DatabaseService;
   basePath?: string;
   enableCors?: boolean;
   enableLogger?: boolean;
+  pluginManager?: PluginManager;
 }
 
 /**

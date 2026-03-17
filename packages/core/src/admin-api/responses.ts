@@ -113,8 +113,6 @@ export function toPluginResponse(plugin: PluginBinding): PluginResponse {
     consumerId: plugin.consumerId,
     config: plugin.config as Record<string, unknown> | null,
     enabled: plugin.enabled ?? true,
-    runOn: plugin.runOn ?? "first",
-    ordering: plugin.ordering as Record<string, unknown> | null,
     tags: plugin.tags as string[],
     createdAt: plugin.createdAt!,
     updatedAt: plugin.updatedAt!,

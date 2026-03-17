@@ -1,19 +1,34 @@
 import { DatabaseService } from "../storage/database.js";
 import { PluginBindingRepository } from "../entities/plugin-binding.js";
-import type { PluginDefinition, PluginContext, PluginPhase } from "./types.js";
+import type { PluginDefinition, PluginContext, PluginPhase, PluginInstance } from "./types.js";
 import { PluginLoader } from "./plugin-loader.js";
-import { eq, or, isNull } from "drizzle-orm";
+import { eq, isNull, and } from "drizzle-orm";
 import { plugins } from "../storage/schema.js";
 
 /**
- * PluginManager - 管理插件的生命周期和执行
+ * PluginManager - Manages plugin lifecycle and execution
+ *
+ * Key Design:
+ * - PluginDefinition: The plugin code (singleton), contains handlers like onRequest/onResponse
+ * - PluginInstance: A runtime instance of a plugin (can have multiple), contains specific config and bindings
+ *
+ * The same plugin name (e.g., "cors") can have multiple instances at different levels (service/route/consumer),
+ * each with its own configuration.
  */
 export class PluginManager {
   private db: DatabaseService;
   private pluginRepo: PluginBindingRepository;
   private loader: PluginLoader;
+
+  // Custom plugin definitions (code level)
   private customPlugins: Map<string, PluginDefinition> = new Map();
-  private pluginsCache: Map<string, PluginDefinition> = new Map();
+
+  // Plugin definition cache (code level, cached by name)
+  private pluginDefsCache: Map<string, PluginDefinition> = new Map();
+
+  // Plugin instance cache (cached by dimension: routeId/serviceId/consumerId -> PluginInstance[])
+  private instancesCache: Map<string, PluginInstance[]> = new Map();
+
   private cacheValid = false;
 
   constructor(db: DatabaseService) {
@@ -23,7 +38,7 @@ export class PluginManager {
   }
 
   /**
-   * Register a custom plugin definition
+   * Register a custom plugin definition (code level)
    */
   registerPlugin(plugin: PluginDefinition): void {
     this.customPlugins.set(plugin.name, plugin);
@@ -39,35 +54,36 @@ export class PluginManager {
   }
 
   /**
-   * Get all plugins for a specific route
+   * Get all plugin instances for a specific route
+   * Returns PluginInstance[], each instance has independent configuration
    */
-  async getPluginsForRoute(routeId: string): Promise<PluginDefinition[]> {
-    return this.getPlugins({ routeId });
+  async getPluginInstancesForRoute(routeId: string, serviceId?: string): Promise<PluginInstance[]> {
+    return this.getPluginInstances({ routeId, serviceId });
   }
 
   /**
-   * Get all plugins for a specific service
+   * Get all plugin instances for a specific service
    */
-  async getPluginsForService(serviceId: string): Promise<PluginDefinition[]> {
-    return this.getPlugins({ serviceId });
+  async getPluginInstancesForService(serviceId: string): Promise<PluginInstance[]> {
+    return this.getPluginInstances({ serviceId });
   }
 
   /**
-   * Get all plugins for a specific consumer
+   * Get all plugin instances for a specific consumer
    */
-  async getPluginsForConsumer(consumerId: string): Promise<PluginDefinition[]> {
-    return this.getPlugins({ consumerId });
+  async getPluginInstancesForConsumer(consumerId: string): Promise<PluginInstance[]> {
+    return this.getPluginInstances({ consumerId });
   }
 
   /**
-   * Get all enabled plugins (global)
+   * Get all global plugin instances (not bound to any route/service/consumer)
    */
-  async getGlobalPlugins(): Promise<PluginDefinition[]> {
-    return this.getPlugins({ global: true });
+  async getGlobalPluginInstances(): Promise<PluginInstance[]> {
+    return this.getPluginInstances({ global: true });
   }
 
   /**
-   * Create a new plugin binding
+   * Create a new plugin binding (instance)
    */
   async createPlugin(input: {
     name: string;
@@ -76,18 +92,24 @@ export class PluginManager {
     consumerId?: string;
     config: Record<string, unknown>;
     enabled?: boolean;
-  }): Promise<void> {
-    await this.pluginRepo.create({
+    tags?: string[];
+  }): Promise<PluginInstance> {
+    const binding = await this.pluginRepo.create({
       name: input.name,
       serviceId: input.serviceId,
       routeId: input.routeId,
       consumerId: input.consumerId,
       config: input.config,
       enabled: input.enabled ?? true,
-      tags: [],
+      tags: input.tags ?? [],
     });
 
+    // Convert to PluginInstance
+    const instance = await this.bindingToInstance(binding);
+
     this.invalidateCache();
+
+    return instance;
   }
 
   /**
@@ -102,16 +124,45 @@ export class PluginManager {
   }
 
   /**
-   * Execute plugins for a specific phase
+   * Update a plugin binding
    */
-  async executePlugins(
+  async updatePlugin(
+    pluginId: string,
+    updates: {
+      name?: string;
+      config?: Record<string, unknown>;
+      enabled?: boolean;
+    },
+  ): Promise<PluginInstance | null> {
+    const binding = await this.pluginRepo.findById(pluginId);
+    if (!binding) {
+      return null;
+    }
+
+    const updated = await this.pluginRepo.update(pluginId, {
+      name: updates.name,
+      config: updates.config,
+      enabled: updates.enabled,
+    });
+
+    this.invalidateCache();
+
+    return this.bindingToInstance(updated);
+  }
+
+  /**
+   * Execute a single plugin instance handler
+   */
+  async executePlugin(
     phase: PluginPhase,
+    instance: PluginInstance,
     ctx: PluginContext,
   ): Promise<{ stopped: boolean; response?: Response; error?: Error }> {
-    // Get the plugin definition for this execution
-    const pluginDef = await this.loadPlugin(ctx.plugin.name);
+    // Load plugin definition (code)
+    const pluginDef = await this.loadPluginDef(instance.name);
 
     if (!pluginDef) {
+      console.warn(`Plugin definition "${instance.name}" not found`);
       return { stopped: false };
     }
 
@@ -122,8 +173,9 @@ export class PluginManager {
     }
 
     try {
-      // Update context with plugin config
-      ctx.config = ctx.plugin.config || {};
+      // Set plugin instance and config in context
+      ctx.plugin = instance;
+      ctx.config = instance.config || {};
 
       // Execute handler
       const result = await handler(ctx);
@@ -151,51 +203,28 @@ export class PluginManager {
   }
 
   /**
-   * Execute all plugins for a phase in priority order
+   * Execute all plugin instances by priority
+   * Priority: Higher value executes first
    */
-  async executeAllPlugins(
+  async executeAllPluginInstances(
     phase: PluginPhase,
+    instances: PluginInstance[],
     ctx: PluginContext,
-    pluginBindings: Array<{ name: string; config: Record<string, unknown> }>,
   ): Promise<{ stopped: boolean; response?: Response; error?: Error }> {
     // Sort by priority (higher first)
-    const sortedPlugins = await Promise.all(
-      pluginBindings.map(async (binding) => ({
-        binding,
-        def: await this.loadPlugin(binding.name),
-      })),
-    );
-
-    sortedPlugins.sort((a, b) => {
-      const aPriority = a.def?.priority ?? 0;
-      const bPriority = b.def?.priority ?? 0;
+    const sortedInstances = [...instances].sort((a, b) => {
+      const aPriority = a.priority ?? 0;
+      const bPriority = b.priority ?? 0;
       return bPriority - aPriority;
     });
 
-    for (const { binding, def } of sortedPlugins) {
-      if (!def) continue;
+    for (const instance of sortedInstances) {
+      if (!instance.enabled) continue;
 
-      const handler = this.getHandlerForPhase(def, phase);
-      if (!handler) continue;
+      const result = await this.executePlugin(phase, instance, ctx);
 
-      ctx.plugin = { ...binding, id: binding.name } as any;
-      ctx.config = binding.config;
-
-      try {
-        const result = await handler(ctx);
-
-        if (result?.stop) {
-          return { stopped: true, response: result.response };
-        }
-
-        if (result?.error) {
-          return { stopped: true, error: result.error };
-        }
-      } catch (error) {
-        return {
-          stopped: true,
-          error: error instanceof Error ? error : new Error(String(error)),
-        };
+      if (result.stopped) {
+        return result;
       }
     }
 
@@ -203,25 +232,33 @@ export class PluginManager {
   }
 
   /**
-   * Invalidate the plugins cache
+   * Invalidate cache
    */
   private invalidateCache(): void {
     this.cacheValid = false;
-    this.pluginsCache.clear();
+    this.instancesCache.clear();
+    // Note: Do not clear pluginDefsCache, as plugin definitions are singletons
   }
 
   /**
-   * Get plugins matching criteria
+   * Get plugin instances by condition
    */
-  private async getPlugins(options: {
+  private async getPluginInstances(options: {
     routeId?: string;
     serviceId?: string;
     consumerId?: string;
     global?: boolean;
-  }): Promise<PluginDefinition[]> {
+  }): Promise<PluginInstance[]> {
+    // Generate cache key
+    const cacheKey = this.getCacheKey(options);
+    if (this.cacheValid && this.instancesCache.has(cacheKey)) {
+      return this.instancesCache.get(cacheKey)!;
+    }
+
     const db = this.db.getDrizzleDb();
 
-    const conditions = [];
+    // Build query conditions
+    const conditions: any[] = [];
     if (options.routeId) {
       conditions.push(eq(plugins.routeId, options.routeId));
     }
@@ -232,50 +269,99 @@ export class PluginManager {
       conditions.push(eq(plugins.consumerId, options.consumerId));
     }
     if (options.global) {
+      // Global plugins: all three IDs are null
       conditions.push(
-        or(isNull(plugins.routeId), isNull(plugins.serviceId), isNull(plugins.consumerId)),
+        and(isNull(plugins.routeId), isNull(plugins.serviceId), isNull(plugins.consumerId)),
       );
     }
 
-    const result = db.select().from(plugins).where(eq(plugins.enabled, true)).all();
+    // Only query enabled plugins
+    conditions.push(eq(plugins.enabled, true));
 
-    const pluginDefs: PluginDefinition[] = [];
-    for (const row of result) {
-      const def = await this.loadPlugin(row.name);
-      if (def) {
-        pluginDefs.push({ ...def, priority: row.enabled ? 0 : 0 });
+    const rows = db
+      .select()
+      .from(plugins)
+      .where(and(...conditions))
+      .all();
+
+    // Convert to PluginInstance[]
+    const instances: PluginInstance[] = [];
+    for (const row of rows) {
+      const instance = await this.bindingToInstance(row as any);
+      if (instance) {
+        instances.push(instance);
       }
     }
 
-    return pluginDefs;
+    // Cache results
+    this.instancesCache.set(cacheKey, instances);
+
+    return instances;
   }
 
   /**
-   * Load a plugin by name
+   * Generate cache key
    */
-  private async loadPlugin(name: string): Promise<PluginDefinition | null> {
-    // Check cache first
-    const cached = this.pluginsCache.get(name);
+  private getCacheKey(options: {
+    routeId?: string;
+    serviceId?: string;
+    consumerId?: string;
+    global?: boolean;
+  }): string {
+    if (options.global) return "global";
+    if (options.consumerId) return `consumer:${options.consumerId}`;
+    if (options.routeId) return `route:${options.routeId}`;
+    if (options.serviceId) return `service:${options.serviceId}`;
+    return "all";
+  }
+
+  /**
+   * Load plugin definition (code)
+   */
+  private async loadPluginDef(name: string): Promise<PluginDefinition | null> {
+    // Check cache
+    const cached = this.pluginDefsCache.get(name);
     if (cached) {
       return cached;
     }
 
-    // Check custom plugins first
+    // Check custom plugins
     const custom = this.customPlugins.get(name);
     if (custom) {
-      this.pluginsCache.set(name, custom);
+      this.pluginDefsCache.set(name, custom);
       return custom;
     }
 
-    // Try to load built-in plugin
+    // Load built-in plugin
     try {
       const builtin = await this.loader.loadBuiltin(name);
-      this.pluginsCache.set(name, builtin);
+      this.pluginDefsCache.set(name, builtin);
       return builtin;
     } catch {
-      console.warn(`Plugin "${name}" not found`);
+      console.warn(`Plugin definition "${name}" not found`);
       return null;
     }
+  }
+
+  /**
+   * Convert database row to PluginInstance
+   */
+  private async bindingToInstance(binding: any): Promise<PluginInstance> {
+    // Load plugin definition to get priority
+    const pluginDef = await this.loadPluginDef(binding.name);
+    const basePriority = pluginDef?.priority ?? 0;
+
+    return {
+      id: binding.id,
+      name: binding.name,
+      serviceId: binding.serviceId,
+      routeId: binding.routeId,
+      consumerId: binding.consumerId,
+      config: binding.config || {},
+      enabled: binding.enabled,
+      tags: binding.tags || [],
+      priority: basePriority,
+    };
   }
 
   /**
@@ -295,5 +381,12 @@ export class PluginManager {
       default:
         return null;
     }
+  }
+
+  /**
+   * Manually set cache valid (for testing)
+   */
+  setCacheValid(valid: boolean): void {
+    this.cacheValid = valid;
   }
 }

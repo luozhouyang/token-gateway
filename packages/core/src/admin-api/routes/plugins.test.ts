@@ -23,7 +23,6 @@ describe("Plugins Routes", () => {
           key_names: ["apikey"],
         },
         enabled: true,
-        runOn: "first",
         tags: ["test"],
       };
 
@@ -38,7 +37,6 @@ describe("Plugins Routes", () => {
       expect(json.data).toBeDefined();
       expect(json.data.name).toBe("key-auth");
       expect(json.data.enabled).toBe(true);
-      expect(json.data.runOn).toBe("first");
     });
 
     test("creates a plugin bound to a service", async () => {
