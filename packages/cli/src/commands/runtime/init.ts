@@ -3,6 +3,7 @@
 import { Command } from "commander";
 import { promises as fs } from "fs";
 import { join } from "path";
+import { getConfigPath, getDatabasePath } from "@token-gateway/core";
 
 const defaultConfig = `# Token Gateway Configuration
 # This file controls how the proxy engine routes and processes requests
@@ -15,7 +16,8 @@ server:
 # Database configuration
 database:
   # SQLite database file path
-  path: "./token-gateway.db"
+  # Default: uses user config directory (~/.config/token-gateway/token-gateway.db on Linux)
+  path: "${getDatabasePath()}"
 
 # Admin API configuration
 admin:
@@ -83,7 +85,7 @@ plugins:
 export function createInitCommand(): Command {
   return new Command("init")
     .description("Initialize a new configuration file")
-    .argument("[path]", "Config file path", "./proxy.config.yaml")
+    .argument("[path]", "Config file path", getConfigPath())
     .option("-f, --force", "Overwrite existing config file")
     .action(async (path, options) => {
       const configPath = join(process.cwd(), path);

@@ -1,10 +1,7 @@
 // Configuration Service
 
 import { promises as fs } from "fs";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
+import { getCliConfigPath } from "@token-gateway/core";
 
 export interface Config {
   apiUrl?: string;
@@ -17,7 +14,7 @@ const defaultConfig: Config = {
 };
 
 export class ConfigService {
-  private static configPath = join(__dirname, "../../.proxy-config.json");
+  private static configPath = getCliConfigPath();
 
   static async load(): Promise<Config> {
     try {

@@ -36,6 +36,14 @@ export {
   type LoadBalancingAlgorithm,
 } from "./engine/load-balancer.js";
 
+// Utils
+export {
+  getConfigDir,
+  getConfigPath,
+  getDatabasePath,
+  getCliConfigPath,
+} from "./utils/app-paths.js";
+
 // Admin API
 export { createAdminApi, type AdminApiOptions } from "./admin-api/server.js";
 // Zod schemas (prefixed with Z to avoid naming conflicts)

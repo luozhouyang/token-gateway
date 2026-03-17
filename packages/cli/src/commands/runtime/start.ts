@@ -4,7 +4,7 @@ import { Command } from "commander";
 import { promises as fs } from "fs";
 import { join } from "path";
 import * as yaml from "js-yaml";
-import { DatabaseService, runMigrations } from "@token-gateway/core";
+import { DatabaseService, runMigrations, getDatabasePath } from "@token-gateway/core";
 
 interface Config {
   server?: {
@@ -59,9 +59,15 @@ async function startEngine(configPath: string): Promise<void> {
     // Load configuration
     const config = await loadConfig(configPath);
 
-    // Get database path
-    const dbPath = config.database?.path || "./token-gateway.db";
-    const absoluteDbPath = join(process.cwd(), dbPath);
+    // Get database path - use configured path or default to unified location
+    const configuredDbPath = config.database?.path;
+    const dbPath = configuredDbPath || getDatabasePath();
+
+    // If dbPath is absolute, use it directly; otherwise resolve relative to config file
+    const absoluteDbPath =
+      dbPath.startsWith("/") || dbPath.includes(":")
+        ? dbPath
+        : join(join(configPath, ".."), dbPath);
 
     console.log("Running database migrations...");
     runMigrations(absoluteDbPath);
