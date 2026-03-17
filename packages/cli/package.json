@@ -14,21 +14,24 @@
     "directory": "packages/cli"
   },
   "bin": {
-    "proxy-engine": "./dist/cli/index.js"
+    "proxy-engine": "./dist/index.mjs"
   },
   "files": [
     "dist"
   ],
   "type": "module",
   "scripts": {
-    "build": "vp build",
-    "dev": "vp build --watch",
+    "build": "vp pack src/cli/index.ts",
+    "dev": "vp pack --watch src/cli/index.ts",
     "test": "vp test",
     "check": "vp check",
-    "start": "node dist/cli/index.js"
+    "start": "node dist/index.mjs"
   },
   "dependencies": {
-    "commander": "^12.0.0"
+    "@token-gateway/core": "workspace:*",
+    "@types/js-yaml": "^4.0.9",
+    "commander": "^12.0.0",
+    "js-yaml": "^4.1.1"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",

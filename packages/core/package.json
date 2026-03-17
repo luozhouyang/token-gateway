@@ -17,11 +17,11 @@
     "dist"
   ],
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "scripts": {
-    "build": "vp build",
-    "dev": "vp build --watch",
+    "build": "vp pack src/index.ts && cp -r drizzle dist/",
+    "dev": "vp pack --watch src/index.ts",
     "test": "vp test",
     "check": "vp check"
   },

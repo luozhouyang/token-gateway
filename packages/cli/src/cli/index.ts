@@ -1,69 +1,37 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
+import { createAdminCommand } from "../commands/admin/index.js";
+import { createInitCommand } from "../commands/runtime/init.js";
+import { createValidateCommand } from "../commands/runtime/validate.js";
+import { createStartCommand } from "../commands/runtime/start.js";
+import { createStopCommand } from "../commands/runtime/stop.js";
+import { createRestartCommand } from "../commands/runtime/restart.js";
+import { createReloadCommand } from "../commands/runtime/reload.js";
+import { createStatusCommand } from "../commands/runtime/status.js";
 
-const pkg = await import("../../package.json", { with: { type: "json" } });
+// Package version - using a hardcoded value since bundler has issues with JSON imports
+const pkgVersion = "0.0.0";
 
 const program = new Command();
 
 program
   .name("proxy-engine")
-  .version(pkg.default.version)
+  .version(pkgVersion)
   .description("API Proxy Engine CLI - A programmable API gateway");
 
-program
-  .command("start")
-  .description("Start the proxy engine")
-  .option("-c, --config <path>", "Config file path", "./proxy.config.yaml")
-  .option("-w, --watch", "Watch config file changes")
-  .action((options) => {
-    console.log("Starting proxy engine...");
-    console.log("Config:", options.config);
-    console.log("Watch:", options.watch ? "enabled" : "disabled");
-  });
+// Admin API commands
+program.addCommand(createAdminCommand());
 
-program
-  .command("stop")
-  .description("Stop the proxy engine")
-  .action(() => {
-    console.log("Stopping proxy engine...");
-  });
+// Runtime commands
+program.addCommand(createStartCommand());
+program.addCommand(createStopCommand());
+program.addCommand(createRestartCommand());
+program.addCommand(createReloadCommand());
+program.addCommand(createStatusCommand());
 
-program
-  .command("restart")
-  .description("Restart the proxy engine")
-  .action(() => {
-    console.log("Restarting proxy engine...");
-  });
-
-program
-  .command("reload")
-  .description("Reload configuration without restart")
-  .action(() => {
-    console.log("Reloading configuration...");
-  });
-
-program
-  .command("status")
-  .description("Show proxy engine status")
-  .action(() => {
-    console.log("Proxy engine status: running");
-  });
-
-program
-  .command("init")
-  .description("Initialize a new configuration file")
-  .argument("[path]", "Config file path", "./proxy.config.yaml")
-  .action((path) => {
-    console.log("Initializing config at:", path);
-  });
-
-program
-  .command("validate")
-  .description("Validate configuration file")
-  .option("-c, --config <path>", "Config file path", "./proxy.config.yaml")
-  .action((options) => {
-    console.log("Validating config:", options.config);
-  });
+// Configuration commands
+program.addCommand(createInitCommand());
+program.addCommand(createValidateCommand());
 
 program.parse();
