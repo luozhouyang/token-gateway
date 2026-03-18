@@ -1,9 +1,8 @@
-#!/usr/bin/env node
 import { Command } from "commander";
 import { startUnifiedServer, getDatabasePath } from "@token-gateway/core";
 import path from "path";
-import fs from "fs/promises";
 import { fileURLToPath } from "url";
+import { existsSync } from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,10 +26,6 @@ program
       // Determine database path
       const dbPath = options.db || getDatabasePath();
 
-      // Ensure database directory exists
-      const dbDir = path.dirname(dbPath);
-      await fs.mkdir(dbDir, { recursive: true });
-
       // Determine UI dist path
       let uiDistPath: string | undefined;
 
@@ -51,41 +46,25 @@ program
           const devPath = path.join(process.cwd(), "apps/web/dist");
 
           // Check which path exists
-          try {
-            await fs.access(embeddedPath);
+          if (existsSync(embeddedPath)) {
             uiDistPath = embeddedPath;
-          } catch {
-            try {
-              await fs.access(devPath);
-              uiDistPath = devPath;
-            } catch {
-              // Neither path exists
-              console.warn("Web UI dist not found. Starting without UI.");
-              console.warn("To include UI, build the web app or specify --ui-dist");
-            }
+          } else if (existsSync(devPath)) {
+            uiDistPath = devPath;
+          } else {
+            console.warn("Web UI dist not found. Starting without UI.");
+            console.warn("To include UI, build the web app or specify --ui-dist");
           }
         }
 
         // Verify path exists
-        if (
-          uiDistPath &&
-          !(await fs
-            .access(uiDistPath)
-            .then(() => true)
-            .catch(() => false))
-        ) {
+        if (uiDistPath && !existsSync(uiDistPath)) {
           console.warn(`Warning: Web UI not found at ${uiDistPath}`);
           console.warn("Starting without Web UI...");
           uiDistPath = undefined;
         } else if (uiDistPath) {
           // Check for index.html
           const indexPath = path.join(uiDistPath, "index.html");
-          if (
-            !(await fs
-              .access(indexPath)
-              .then(() => true)
-              .catch(() => false))
-          ) {
+          if (!existsSync(indexPath)) {
             console.warn(`Warning: index.html not found in ${uiDistPath}`);
             uiDistPath = undefined;
           }
@@ -115,12 +94,20 @@ program
     }
   });
 
-// Add a stop command for graceful shutdown
+// Config command
 program
-  .command("status")
-  .description("Check if the server is running")
-  .action(() => {
-    console.log("Server status check not implemented yet");
+  .command("config")
+  .description("Show configuration information")
+  .option("--init", "Initialize configuration directory")
+  .action(async (options) => {
+    const dbPath = getDatabasePath();
+
+    console.log("Configuration:");
+    console.log(`  Database path: ${dbPath}`);
+
+    if (options.init) {
+      console.log("\nInitializing configuration...");
+    }
   });
 
 program.parse();

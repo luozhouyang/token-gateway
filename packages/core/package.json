@@ -26,6 +26,7 @@
     "check": "vp check"
   },
   "dependencies": {
+    "@hono/node-server": "^1.19.11",
     "@hono/zod-validator": "^0.7.6",
     "better-sqlite3": "^11.0.0",
     "drizzle-kit": "^0.31.9",

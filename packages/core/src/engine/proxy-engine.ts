@@ -5,11 +5,21 @@ import { UpstreamRepository } from "../entities/upstream.js";
 import { TargetRepository } from "../entities/target.js";
 import type { Route, Target } from "../storage/schema.js";
 import { RouteMatcher } from "./route-matcher.js";
+import { ProxyRequestHandler } from "./proxy-request-handler.js";
+import type { Context } from "hono";
 import {
   createLoadBalancer,
   HealthAwareLoadBalancer,
   type LoadBalancingAlgorithm,
 } from "./load-balancer.js";
+
+/**
+ * Options for creating ProxyEngine
+ */
+export interface ProxyEngineOptions {
+  /** Database path or DatabaseService instance */
+  databasePath: string;
+}
 
 /**
  * ProxyEngine - Core request routing and load balancing engine
@@ -190,5 +200,13 @@ export class ProxyEngine {
         (underlyingBalancer as any).releaseConnection(targetId);
       }
     }
+  }
+
+  /**
+   * Handle Hono context - main entry point for proxy requests
+   */
+  async handle(c: Context): Promise<Response | null> {
+    const handler = new ProxyRequestHandler((this.serviceRepo as any).db as DatabaseService);
+    return handler.handleRequest(c.req.raw);
   }
 }

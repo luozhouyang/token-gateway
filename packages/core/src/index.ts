@@ -30,7 +30,7 @@ export {
 export * from "./plugins/types.js";
 
 // Engine
-export { ProxyEngine } from "./engine/proxy-engine.js";
+export { ProxyEngine, type ProxyEngineOptions } from "./engine/proxy-engine.js";
 export {
   RoundRobinLoadBalancer,
   LeastConnectionsLoadBalancer,
@@ -50,8 +50,19 @@ export {
   getCliConfigPath,
 } from "./utils/app-paths.js";
 
+// Static Server
+export { createStaticServer, type StaticServerOptions } from "./static-server.js";
+
+// Unified Server
+export {
+  createUnifiedServer,
+  startUnifiedServer,
+  type UnifiedServerOptions,
+} from "./unified-server.js";
+
 // Admin API
 export { createAdminApi, type AdminApiOptions } from "./admin-api/server.js";
+
 // Zod schemas (prefixed with Z to avoid naming conflicts)
 export {
   createServiceSchema,
@@ -75,6 +86,7 @@ export {
   consumerFilterSchema,
   pluginFilterSchema,
 } from "./admin-api/schemas.js";
+
 // API types (prefixed to avoid conflicts)
 export type {
   ServiceResponse,
