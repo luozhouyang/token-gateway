@@ -22,9 +22,11 @@
   "type": "module",
   "scripts": {
     "build": "vp pack src/cli/index.ts",
+    "bundle": "node ./scripts/build.mjs",
     "dev": "vp pack --watch src/cli/index.ts",
+    "prepack": "node ./scripts/build.mjs",
     "test": "vp test",
-    "check": "vp check",
+    "check": "node ./scripts/run-check.mjs",
     "start": "node dist/index.mjs"
   },
   "dependencies": {

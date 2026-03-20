@@ -1,14 +1,51 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { startUnifiedServer, getDatabasePath } from "@token-gateway/core";
+import {
+  DatabaseService,
+  getDatabasePath,
+  runMigrations,
+  startUnifiedServer,
+} from "@token-gateway/core";
 import path from "path";
 import fs from "fs/promises";
 import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const program = new Command();
+
+async function pathExists(targetPath: string): Promise<boolean> {
+  try {
+    await fs.access(targetPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function resolveUiDistPath(options: {
+  uiEnabled: boolean;
+  uiDist?: string;
+}): Promise<string | undefined> {
+  if (!options.uiEnabled) {
+    return undefined;
+  }
+
+  const candidates = [
+    options.uiDist ? path.resolve(options.uiDist) : undefined,
+    process.env.TOKEN_GATEWAY_UI_DIST ? path.resolve(process.env.TOKEN_GATEWAY_UI_DIST) : undefined,
+    fileURLToPath(new URL("./web/", import.meta.url)),
+    path.resolve(process.cwd(), "apps/web/.output/public"),
+    path.resolve(process.cwd(), "apps/web/dist"),
+    path.resolve(process.cwd(), "apps/web/dist/client"),
+  ].filter((value): value is string => Boolean(value));
+
+  for (const candidate of candidates) {
+    if ((await pathExists(candidate)) && (await pathExists(path.join(candidate, "index.html")))) {
+      return candidate;
+    }
+  }
+
+  return undefined;
+}
 
 program
   .name("token-gateway")
@@ -23,78 +60,38 @@ program
   .option("--ui-dist <path>", "Web UI dist directory path")
   .option("--no-ui", "Disable Web UI (Admin API only)")
   .action(async (options) => {
+    let database: DatabaseService | undefined;
+    const uiEnabled = options.ui !== false;
+
     try {
       // Determine database path
-      const dbPath = options.db || getDatabasePath();
+      const dbPath = path.resolve(options.db || getDatabasePath());
 
       // Ensure database directory exists
       const dbDir = path.dirname(dbPath);
       await fs.mkdir(dbDir, { recursive: true });
 
-      // Determine UI dist path
-      let uiDistPath: string | undefined;
+      runMigrations(dbPath);
+      database = new DatabaseService(dbPath);
 
-      if (!options.noUi) {
-        // Priority:
-        // 1. CLI option --ui-dist
-        // 2. Environment variable
-        // 3. Embedded in CLI package
-        // 4. Development mode (apps/web/dist)
+      const uiDistPath = await resolveUiDistPath({
+        uiEnabled,
+        uiDist: options.uiDist,
+      });
 
-        if (options.uiDist) {
-          uiDistPath = options.uiDist;
-        } else if (process.env.TOKEN_GATEWAY_UI_DIST) {
-          uiDistPath = process.env.TOKEN_GATEWAY_UI_DIST;
-        } else {
-          // Try embedded path in CLI package
-          const embeddedPath = path.join(__dirname, "../../web-dist");
-          const devPath = path.join(process.cwd(), "apps/web/dist");
-
-          // Check which path exists
-          try {
-            await fs.access(embeddedPath);
-            uiDistPath = embeddedPath;
-          } catch {
-            try {
-              await fs.access(devPath);
-              uiDistPath = devPath;
-            } catch {
-              // Neither path exists
-              console.warn("Web UI dist not found. Starting without UI.");
-              console.warn("To include UI, build the web app or specify --ui-dist");
-            }
-          }
-        }
-
-        // Verify path exists
-        if (
-          uiDistPath &&
-          !(await fs
-            .access(uiDistPath)
-            .then(() => true)
-            .catch(() => false))
-        ) {
-          console.warn(`Warning: Web UI not found at ${uiDistPath}`);
-          console.warn("Starting without Web UI...");
-          uiDistPath = undefined;
-        } else if (uiDistPath) {
-          // Check for index.html
-          const indexPath = path.join(uiDistPath, "index.html");
-          if (
-            !(await fs
-              .access(indexPath)
-              .then(() => true)
-              .catch(() => false))
-          ) {
-            console.warn(`Warning: index.html not found in ${uiDistPath}`);
-            uiDistPath = undefined;
-          }
-        }
+      if (uiEnabled && !uiDistPath) {
+        console.warn("Web UI dist not found. Starting without UI.");
+        console.warn("To include UI, build the web app or specify --ui-dist");
       }
 
       // Start the unified server
       await startUnifiedServer({
         port: parseInt(options.port, 10),
+        adminApi: {
+          db: database,
+          enableCors: false,
+          enableLogger: false,
+        },
         proxy: {
           databasePath: dbPath,
         },
@@ -110,6 +107,7 @@ program
         enableCompress: true,
       });
     } catch (error) {
+      database?.close();
       console.error("Failed to start server:", error);
       process.exit(1);
     }

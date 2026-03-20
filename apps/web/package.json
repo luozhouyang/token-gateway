@@ -6,10 +6,11 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "vite dev --port 3000",
-    "build": "vite build",
-    "preview": "vite preview",
-    "test": "vitest run"
+    "dev": "vp dev --port 3000",
+    "build": "vp build",
+    "preview": "vp preview",
+    "check": "node ./scripts/run-check.mjs",
+    "test": "vp test --config vitest.config.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

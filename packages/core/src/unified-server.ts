@@ -41,6 +41,9 @@ export interface UnifiedServerOptions {
  */
 export async function createUnifiedServer(options: UnifiedServerOptions): Promise<Hono> {
   const app = new Hono();
+  const sharedDb =
+    options.adminApi?.db ??
+    (options.proxy ? new DatabaseService(options.proxy.databasePath) : null);
 
   // ========== 1. Global Middleware ==========
   if (options.enableLogger !== false) {
@@ -62,8 +65,13 @@ export async function createUnifiedServer(options: UnifiedServerOptions): Promis
   }
 
   // ========== 2. Admin API (/admin/*) ==========
-  if (options.adminApi) {
-    const adminApi = createAdminApi(options.adminApi);
+  if (options.adminApi && sharedDb) {
+    const adminApi = createAdminApi({
+      ...options.adminApi,
+      db: sharedDb,
+      enableCors: false,
+      enableLogger: false,
+    });
     app.route("/admin", adminApi);
   }
 
@@ -71,6 +79,7 @@ export async function createUnifiedServer(options: UnifiedServerOptions): Promis
   if (options.staticServer) {
     const staticServer = createStaticServer({
       ...options.staticServer,
+      urlPrefix: "/ui",
       // Always enable SPA mode for Web UI
       spaMode: true,
     });
@@ -79,16 +88,19 @@ export async function createUnifiedServer(options: UnifiedServerOptions): Promis
 
   // ========== 4. Proxy Engine (/*) ==========
   // Proxy engine is last - it has internal route matching
-  if (options.proxy) {
-    // Create database service from database path
-    const db = new DatabaseService(options.proxy.databasePath);
-    const proxyEngine = new ProxyEngine(db);
+  if (options.proxy && sharedDb) {
+    const proxyEngine = new ProxyEngine(sharedDb);
 
     // Create a handler that integrates with Hono
     app.all("*", async (c: Context) => {
       // Skip if already handled by admin or ui routes
       const path = c.req.path;
-      if (path.startsWith("/admin/") || path.startsWith("/ui/")) {
+      if (
+        path === "/admin" ||
+        path.startsWith("/admin/") ||
+        path === "/ui" ||
+        path.startsWith("/ui/")
+      ) {
         return c.notFound();
       }
 

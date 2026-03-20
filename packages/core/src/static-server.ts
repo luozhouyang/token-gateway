@@ -12,6 +12,8 @@ export interface StaticServerOptions {
   indexFile?: string;
   /** Enable SPA mode - return index.html for non-file paths (default: true) */
   spaMode?: boolean;
+  /** URL prefix stripped before resolving files, e.g. /ui */
+  urlPrefix?: string;
 }
 
 /**
@@ -55,13 +57,34 @@ function isFileRequest(pathStr: string): boolean {
 }
 
 /**
+ * Strip a mounted URL prefix from the incoming request path
+ */
+function stripUrlPrefix(requestPath: string, urlPrefix?: string): string {
+  if (!urlPrefix || urlPrefix === "/") {
+    return requestPath;
+  }
+
+  const normalizedPrefix = urlPrefix.endsWith("/") ? urlPrefix.slice(0, -1) : urlPrefix;
+
+  if (requestPath === normalizedPrefix) {
+    return "/";
+  }
+
+  if (requestPath.startsWith(`${normalizedPrefix}/`)) {
+    return requestPath.slice(normalizedPrefix.length);
+  }
+
+  return requestPath;
+}
+
+/**
  * Create a static file server
  *
  * @param options - Static server options
  * @returns Hono app that serves static files
  */
 export function createStaticServer(options: StaticServerOptions): Hono {
-  const { staticPath, indexFile = "index.html", spaMode = true } = options;
+  const { staticPath, indexFile = "index.html", spaMode = true, urlPrefix } = options;
 
   const app = new Hono();
 
@@ -70,7 +93,7 @@ export function createStaticServer(options: StaticServerOptions): Hono {
 
   // GET /* - Serve static files
   app.get("*", async (c) => {
-    const requestPath = c.req.path;
+    const requestPath = stripUrlPrefix(c.req.path, urlPrefix);
 
     // Security: prevent directory traversal
     if (requestPath.includes("..") || requestPath.includes("\x00")) {

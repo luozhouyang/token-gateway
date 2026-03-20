@@ -8,210 +8,210 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root";
-import { Route as AboutRouteImport } from "./routes/about";
-import { Route as IndexRouteImport } from "./routes/index";
-import { Route as UpstreamsIndexRouteImport } from "./routes/upstreams/index";
-import { Route as SettingsIndexRouteImport } from "./routes/settings/index";
-import { Route as ServicesIndexRouteImport } from "./routes/services/index";
-import { Route as RoutesIndexRouteImport } from "./routes/routes/index";
-import { Route as PluginsIndexRouteImport } from "./routes/plugins/index";
-import { Route as DashboardIndexRouteImport } from "./routes/dashboard/index";
-import { Route as ConsumersIndexRouteImport } from "./routes/consumers/index";
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as UpstreamsIndexRouteImport } from './routes/upstreams/index'
+import { Route as SettingsIndexRouteImport } from './routes/settings/index'
+import { Route as ServicesIndexRouteImport } from './routes/services/index'
+import { Route as RoutesIndexRouteImport } from './routes/routes/index'
+import { Route as PluginsIndexRouteImport } from './routes/plugins/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as ConsumersIndexRouteImport } from './routes/consumers/index'
 
 const AboutRoute = AboutRouteImport.update({
-  id: "/about",
-  path: "/about",
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const IndexRoute = IndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const UpstreamsIndexRoute = UpstreamsIndexRouteImport.update({
-  id: "/upstreams/",
-  path: "/upstreams/",
+  id: '/upstreams/',
+  path: '/upstreams/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const SettingsIndexRoute = SettingsIndexRouteImport.update({
-  id: "/settings/",
-  path: "/settings/",
+  id: '/settings/',
+  path: '/settings/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const ServicesIndexRoute = ServicesIndexRouteImport.update({
-  id: "/services/",
-  path: "/services/",
+  id: '/services/',
+  path: '/services/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const RoutesIndexRoute = RoutesIndexRouteImport.update({
-  id: "/routes/",
-  path: "/routes/",
+  id: '/routes/',
+  path: '/routes/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const PluginsIndexRoute = PluginsIndexRouteImport.update({
-  id: "/plugins/",
-  path: "/plugins/",
+  id: '/plugins/',
+  path: '/plugins/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
-  id: "/dashboard/",
-  path: "/dashboard/",
+  id: '/dashboard/',
+  path: '/dashboard/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const ConsumersIndexRoute = ConsumersIndexRouteImport.update({
-  id: "/consumers/",
-  path: "/consumers/",
+  id: '/consumers/',
+  path: '/consumers/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 
 export interface FileRoutesByFullPath {
-  "/": typeof IndexRoute;
-  "/about": typeof AboutRoute;
-  "/consumers/": typeof ConsumersIndexRoute;
-  "/dashboard/": typeof DashboardIndexRoute;
-  "/plugins/": typeof PluginsIndexRoute;
-  "/routes/": typeof RoutesIndexRoute;
-  "/services/": typeof ServicesIndexRoute;
-  "/settings/": typeof SettingsIndexRoute;
-  "/upstreams/": typeof UpstreamsIndexRoute;
+  '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/consumers/': typeof ConsumersIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/plugins/': typeof PluginsIndexRoute
+  '/routes/': typeof RoutesIndexRoute
+  '/services/': typeof ServicesIndexRoute
+  '/settings/': typeof SettingsIndexRoute
+  '/upstreams/': typeof UpstreamsIndexRoute
 }
 export interface FileRoutesByTo {
-  "/": typeof IndexRoute;
-  "/about": typeof AboutRoute;
-  "/consumers": typeof ConsumersIndexRoute;
-  "/dashboard": typeof DashboardIndexRoute;
-  "/plugins": typeof PluginsIndexRoute;
-  "/routes": typeof RoutesIndexRoute;
-  "/services": typeof ServicesIndexRoute;
-  "/settings": typeof SettingsIndexRoute;
-  "/upstreams": typeof UpstreamsIndexRoute;
+  '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/consumers': typeof ConsumersIndexRoute
+  '/dashboard': typeof DashboardIndexRoute
+  '/plugins': typeof PluginsIndexRoute
+  '/routes': typeof RoutesIndexRoute
+  '/services': typeof ServicesIndexRoute
+  '/settings': typeof SettingsIndexRoute
+  '/upstreams': typeof UpstreamsIndexRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  "/": typeof IndexRoute;
-  "/about": typeof AboutRoute;
-  "/consumers/": typeof ConsumersIndexRoute;
-  "/dashboard/": typeof DashboardIndexRoute;
-  "/plugins/": typeof PluginsIndexRoute;
-  "/routes/": typeof RoutesIndexRoute;
-  "/services/": typeof ServicesIndexRoute;
-  "/settings/": typeof SettingsIndexRoute;
-  "/upstreams/": typeof UpstreamsIndexRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/consumers/': typeof ConsumersIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/plugins/': typeof PluginsIndexRoute
+  '/routes/': typeof RoutesIndexRoute
+  '/services/': typeof ServicesIndexRoute
+  '/settings/': typeof SettingsIndexRoute
+  '/upstreams/': typeof UpstreamsIndexRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
+  fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | "/"
-    | "/about"
-    | "/consumers/"
-    | "/dashboard/"
-    | "/plugins/"
-    | "/routes/"
-    | "/services/"
-    | "/settings/"
-    | "/upstreams/";
-  fileRoutesByTo: FileRoutesByTo;
+    | '/'
+    | '/about'
+    | '/consumers/'
+    | '/dashboard/'
+    | '/plugins/'
+    | '/routes/'
+    | '/services/'
+    | '/settings/'
+    | '/upstreams/'
+  fileRoutesByTo: FileRoutesByTo
   to:
-    | "/"
-    | "/about"
-    | "/consumers"
-    | "/dashboard"
-    | "/plugins"
-    | "/routes"
-    | "/services"
-    | "/settings"
-    | "/upstreams";
+    | '/'
+    | '/about'
+    | '/consumers'
+    | '/dashboard'
+    | '/plugins'
+    | '/routes'
+    | '/services'
+    | '/settings'
+    | '/upstreams'
   id:
-    | "__root__"
-    | "/"
-    | "/about"
-    | "/consumers/"
-    | "/dashboard/"
-    | "/plugins/"
-    | "/routes/"
-    | "/services/"
-    | "/settings/"
-    | "/upstreams/";
-  fileRoutesById: FileRoutesById;
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/consumers/'
+    | '/dashboard/'
+    | '/plugins/'
+    | '/routes/'
+    | '/services/'
+    | '/settings/'
+    | '/upstreams/'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  AboutRoute: typeof AboutRoute;
-  ConsumersIndexRoute: typeof ConsumersIndexRoute;
-  DashboardIndexRoute: typeof DashboardIndexRoute;
-  PluginsIndexRoute: typeof PluginsIndexRoute;
-  RoutesIndexRoute: typeof RoutesIndexRoute;
-  ServicesIndexRoute: typeof ServicesIndexRoute;
-  SettingsIndexRoute: typeof SettingsIndexRoute;
-  UpstreamsIndexRoute: typeof UpstreamsIndexRoute;
+  IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
+  ConsumersIndexRoute: typeof ConsumersIndexRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+  PluginsIndexRoute: typeof PluginsIndexRoute
+  RoutesIndexRoute: typeof RoutesIndexRoute
+  ServicesIndexRoute: typeof ServicesIndexRoute
+  SettingsIndexRoute: typeof SettingsIndexRoute
+  UpstreamsIndexRoute: typeof UpstreamsIndexRoute
 }
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/about": {
-      id: "/about";
-      path: "/about";
-      fullPath: "/about";
-      preLoaderRoute: typeof AboutRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/": {
-      id: "/";
-      path: "/";
-      fullPath: "/";
-      preLoaderRoute: typeof IndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/upstreams/": {
-      id: "/upstreams/";
-      path: "/upstreams";
-      fullPath: "/upstreams/";
-      preLoaderRoute: typeof UpstreamsIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/settings/": {
-      id: "/settings/";
-      path: "/settings";
-      fullPath: "/settings/";
-      preLoaderRoute: typeof SettingsIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/services/": {
-      id: "/services/";
-      path: "/services";
-      fullPath: "/services/";
-      preLoaderRoute: typeof ServicesIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/routes/": {
-      id: "/routes/";
-      path: "/routes";
-      fullPath: "/routes/";
-      preLoaderRoute: typeof RoutesIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/plugins/": {
-      id: "/plugins/";
-      path: "/plugins";
-      fullPath: "/plugins/";
-      preLoaderRoute: typeof PluginsIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/dashboard/": {
-      id: "/dashboard/";
-      path: "/dashboard";
-      fullPath: "/dashboard/";
-      preLoaderRoute: typeof DashboardIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/consumers/": {
-      id: "/consumers/";
-      path: "/consumers";
-      fullPath: "/consumers/";
-      preLoaderRoute: typeof ConsumersIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/upstreams/': {
+      id: '/upstreams/'
+      path: '/upstreams'
+      fullPath: '/upstreams/'
+      preLoaderRoute: typeof UpstreamsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/': {
+      id: '/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof SettingsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/services/': {
+      id: '/services/'
+      path: '/services'
+      fullPath: '/services/'
+      preLoaderRoute: typeof ServicesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/routes/': {
+      id: '/routes/'
+      path: '/routes'
+      fullPath: '/routes/'
+      preLoaderRoute: typeof RoutesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plugins/': {
+      id: '/plugins/'
+      path: '/plugins'
+      fullPath: '/plugins/'
+      preLoaderRoute: typeof PluginsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/dashboard'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/consumers/': {
+      id: '/consumers/'
+      path: '/consumers'
+      fullPath: '/consumers/'
+      preLoaderRoute: typeof ConsumersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -225,16 +225,16 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesIndexRoute: ServicesIndexRoute,
   SettingsIndexRoute: SettingsIndexRoute,
   UpstreamsIndexRoute: UpstreamsIndexRoute,
-};
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()
 
-import type { getRouter } from "./router.tsx";
-import type { createStart } from "@tanstack/react-start";
-declare module "@tanstack/react-start" {
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
   interface Register {
-    ssr: true;
-    router: Awaited<ReturnType<typeof getRouter>>;
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
   }
 }

@@ -1,6 +1,6 @@
 // API Client for Token Gateway Admin API
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "/admin";
 
 // Type exports from packages/core
 export interface Service {
