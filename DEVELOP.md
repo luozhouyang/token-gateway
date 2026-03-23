@@ -12,8 +12,8 @@ This repository does not publish the web app as a standalone package.
 
 The release model is:
 
-1. Publish `@token-gateway/core` as a runtime library.
-2. Publish `@token-gateway/cli` as the user-facing package.
+1. Publish `@minigateway/core` as a runtime library.
+2. Publish `@minigateway/cli` as the user-facing package.
 3. Build `apps/web` into static assets and copy them into `packages/cli/dist/web`.
 4. Start one HTTP server from the CLI that serves:
    - `/ui` for the React app
@@ -22,9 +22,9 @@ The release model is:
 
 Important implications:
 
-- End users only need to install `@token-gateway/cli`.
+- End users only need to install `@minigateway/cli`.
 - `apps/web` is private and should not be published.
-- `@token-gateway/cli` depends on `@token-gateway/core`, so `core` must be published before `cli`.
+- `@minigateway/cli` depends on `@minigateway/core`, so `core` must be published before `cli`.
 
 ## Prerequisites
 
@@ -125,18 +125,17 @@ This repository uses `changesets` for versioning and release management.
 
 Only these packages are managed for npm release:
 
-- `@token-gateway/core`
-- `@token-gateway/cli`
+- `@minigateway/core`
+- `@minigateway/cli`
 
 The following workspace packages are ignored by `changesets`:
 
 - `web`
 - `website`
-- `utils`
 
 ## Changesets Workflow
 
-Create a changeset whenever a merged change should affect the published version of `@token-gateway/core`, `@token-gateway/cli`, or both.
+Create a changeset whenever a merged change should affect the published version of `@minigateway/core`, `@minigateway/cli`, or both.
 
 Create a changeset from the repository root:
 
@@ -152,8 +151,8 @@ The CLI will ask you to:
 
 Package selection guidance:
 
-- Choose `@token-gateway/core` when the change affects runtime APIs, server behavior, storage, migrations, proxy logic, or code consumed by the CLI.
-- Choose `@token-gateway/cli` when the change affects CLI commands, CLI packaging, startup behavior, or the shipped web bundle.
+- Choose `@minigateway/core` when the change affects runtime APIs, server behavior, storage, migrations, proxy logic, or code consumed by the CLI.
+- Choose `@minigateway/cli` when the change affects CLI commands, CLI packaging, startup behavior, or the shipped web bundle.
 - Choose both when the CLI depends on new or changed behavior in `core`.
 
 Bump type guidance:
@@ -190,16 +189,16 @@ After running it:
 2. Commit the updated package manifests and lockfile.
 3. Do not add extra unrelated changes before publishing.
 
-Because `packages/cli` uses a workspace dependency during development, the packed artifact must resolve to a real published `@token-gateway/core` version when released. `changesets` handles the package version bumps, and `pnpm` resolves the workspace dependency correctly during publish.
+Because `packages/cli` uses a workspace dependency during development, the packed artifact must resolve to a real published `@minigateway/core` version when released. `changesets` handles the package version bumps, and `pnpm` resolves the workspace dependency correctly during publish.
 
 ## Publish Order
 
 Always publish in this order:
 
-1. `@token-gateway/core`
-2. `@token-gateway/cli`
+1. `@minigateway/core`
+2. `@minigateway/cli`
 
-Do not publish the CLI first. Consumers installing the CLI must be able to resolve the referenced `@token-gateway/core` version from the registry.
+Do not publish the CLI first. Consumers installing the CLI must be able to resolve the referenced `@minigateway/core` version from the registry.
 
 ## Publish Commands
 
@@ -262,8 +261,8 @@ Notes:
 - `packages/core` and `packages/cli` both publish with `access: public`.
 - `packages/core` now has a `prepack` script, and `packages/cli` already had one.
 - `packages/cli` will rebuild and embed the web assets automatically during publish.
-- `changeset publish` uses `pnpm publish` in this workspace, so the workspace dependency from `@token-gateway/cli` to `@token-gateway/core` is resolved correctly at publish time.
-- For local manual publishing, keep the publish order in mind: `@token-gateway/core` must exist in npm before users can install the released CLI version.
+- `changeset publish` uses `pnpm publish` in this workspace, so the workspace dependency from `@minigateway/cli` to `@minigateway/core` is resolved correctly at publish time.
+- For local manual publishing, keep the publish order in mind: `@minigateway/core` must exist in npm before users can install the released CLI version.
 
 ## Packing Without Publishing
 
@@ -288,7 +287,7 @@ For the CLI package, `pnpm pack` will also trigger `prepack`, which means the ta
 
 After a successful release:
 
-1. Users install `@token-gateway/cli`.
+1. Users install `@minigateway/cli`.
 2. Users run the CLI binary:
 
 ```bash

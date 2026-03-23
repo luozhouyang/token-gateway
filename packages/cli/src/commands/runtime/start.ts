@@ -4,7 +4,7 @@ import { Command } from "commander";
 import { promises as fs } from "fs";
 import { join } from "path";
 import * as yaml from "js-yaml";
-import { DatabaseService, runMigrations, getDatabasePath } from "@token-gateway/core";
+import { DatabaseService, runMigrations, getDatabasePath } from "@minigateway/core";
 
 interface Config {
   server?: {
@@ -76,7 +76,7 @@ async function startEngine(configPath: string): Promise<void> {
     database = new DatabaseService(absoluteDbPath);
 
     console.log("Creating admin API...");
-    const { createAdminApi } = await import("@token-gateway/core");
+    const { createAdminApi } = await import("@minigateway/core");
     const _app = createAdminApi({ db: database });
 
     // Get server config

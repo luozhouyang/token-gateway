@@ -1,7 +1,7 @@
 // Configuration Service
 
 import { promises as fs } from "fs";
-import { getCliConfigPath } from "@token-gateway/core";
+import { getCliConfigPath } from "@minigateway/core";
 
 export interface Config {
   apiUrl?: string;

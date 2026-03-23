@@ -3,7 +3,7 @@
 import { Command } from "commander";
 import { promises as fs } from "fs";
 import { join } from "path";
-import { getConfigPath, getDatabasePath } from "@token-gateway/core";
+import { getConfigPath, getDatabasePath } from "@minigateway/core";
 
 const defaultConfig = `# Token Gateway Configuration
 # This file controls how the proxy engine routes and processes requests

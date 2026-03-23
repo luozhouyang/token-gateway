@@ -1,5 +1,5 @@
 {
-  "name": "@token-gateway/cli",
+  "name": "@minigateway/cli",
   "version": "0.0.0",
   "description": "API Proxy Engine CLI - A programmable API gateway based on Hono",
   "homepage": "https://github.com/luozhouyang/token-gateway/tree/main/packages/cli#readme",
@@ -33,7 +33,7 @@
     "start": "node dist/index.mjs"
   },
   "dependencies": {
-    "@token-gateway/core": "workspace:*",
+    "@minigateway/core": "workspace:*",
     "@types/js-yaml": "^4.0.9",
     "commander": "^12.0.0",
     "js-yaml": "^4.1.1"

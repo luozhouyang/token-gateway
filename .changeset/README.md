@@ -4,14 +4,13 @@ This repository uses Changesets to manage npm releases for publishable packages.
 
 ## Packages Managed by Changesets
 
-- `@token-gateway/core`
-- `@token-gateway/cli`
+- `@minigateway/core`
+- `@minigateway/cli`
 
 The following workspace packages are ignored by the release workflow:
 
 - `web`
 - `website`
-- `utils`
 
 ## Common Commands
 

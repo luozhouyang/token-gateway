@@ -1,5 +1,5 @@
 {
-  "name": "@token-gateway/core",
+  "name": "@minigateway/core",
   "version": "0.0.0",
   "description": "API Proxy Engine Core - Core business logic",
   "homepage": "https://github.com/luozhouyang/token-gateway/tree/main/packages/core#readme",

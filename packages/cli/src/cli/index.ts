@@ -5,7 +5,7 @@ import {
   getDatabasePath,
   runMigrations,
   startUnifiedServer,
-} from "@token-gateway/core";
+} from "@minigateway/core";
 import path from "path";
 import fs from "fs/promises";
 import { fileURLToPath } from "url";
