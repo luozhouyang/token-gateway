@@ -13,6 +13,7 @@ import { createCredentialsRoutes } from "./routes/credentials.js";
 import { createPluginsRoutes } from "./routes/plugins.js";
 import { DatabaseService } from "../storage/database.js";
 import { PluginManager } from "../plugins/plugin-manager.js";
+import { createLogger, getRequestId, type LogLevel } from "../utils/debug-logger.js";
 
 export interface AdminApiOptions {
   db: DatabaseService;
@@ -20,6 +21,7 @@ export interface AdminApiOptions {
   enableCors?: boolean;
   enableLogger?: boolean;
   pluginManager?: PluginManager;
+  logLevel?: LogLevel;
 }
 
 /**
@@ -29,6 +31,10 @@ export interface AdminApiOptions {
  */
 export function createAdminApi(options: AdminApiOptions): Hono {
   const app = new Hono();
+  const debugLogger = createLogger({
+    scope: "admin-api",
+    level: options.logLevel,
+  });
 
   // Global error handler
   app.onError(errorHandler);
@@ -40,6 +46,32 @@ export function createAdminApi(options: AdminApiOptions): Hono {
   if (options.enableCors !== false) {
     app.use("*", cors());
   }
+
+  app.use("*", async (c, next) => {
+    const requestId = getRequestId(c.req.raw);
+    const startTime = Date.now();
+    const requestUrl = new URL(c.req.url);
+
+    c.header("X-Request-ID", requestId);
+    debugLogger.debug("Admin API request started", {
+      requestId,
+      method: c.req.method,
+      path: c.req.path,
+      query: Object.fromEntries(requestUrl.searchParams.entries()),
+    });
+
+    try {
+      await next();
+    } finally {
+      debugLogger.debug("Admin API request completed", {
+        requestId,
+        method: c.req.method,
+        path: c.req.path,
+        status: c.res.status || 500,
+        durationMs: Date.now() - startTime,
+      });
+    }
+  });
 
   // Register routes at root level
   const servicesRoutes = createServicesRoutes(options.db);

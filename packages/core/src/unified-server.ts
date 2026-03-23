@@ -7,6 +7,7 @@ import { DatabaseService } from "./storage/database.js";
 import { createAdminApi, type AdminApiOptions } from "./admin-api/server.js";
 import { createStaticServer, type StaticServerOptions } from "./static-server.js";
 import { ProxyEngine, type ProxyEngineOptions } from "./engine/proxy-engine.js";
+import { createLogger, type LogLevel } from "./utils/debug-logger.js";
 
 /**
  * Unified server options
@@ -26,6 +27,8 @@ export interface UnifiedServerOptions {
   enableLogger?: boolean;
   /** Enable compression (default: true) */
   enableCompress?: boolean;
+  /** Runtime log level */
+  logLevel?: LogLevel;
 }
 
 /**
@@ -41,6 +44,10 @@ export interface UnifiedServerOptions {
  */
 export async function createUnifiedServer(options: UnifiedServerOptions): Promise<Hono> {
   const app = new Hono();
+  const appLogger = createLogger({
+    scope: "unified-server",
+    level: options.logLevel,
+  });
   const sharedDb =
     options.adminApi?.db ??
     (options.proxy ? new DatabaseService(options.proxy.databasePath) : null);
@@ -71,6 +78,7 @@ export async function createUnifiedServer(options: UnifiedServerOptions): Promis
       db: sharedDb,
       enableCors: false,
       enableLogger: false,
+      logLevel: options.logLevel,
     });
     app.route("/admin", adminApi);
   }
@@ -89,7 +97,9 @@ export async function createUnifiedServer(options: UnifiedServerOptions): Promis
   // ========== 4. Proxy Engine (/*) ==========
   // Proxy engine is last - it has internal route matching
   if (options.proxy && sharedDb) {
-    const proxyEngine = new ProxyEngine(sharedDb);
+    const proxyEngine = new ProxyEngine(sharedDb, {
+      logger: appLogger.child("proxy"),
+    });
 
     // Create a handler that integrates with Hono
     app.all("*", async (c: Context) => {
@@ -111,6 +121,11 @@ export async function createUnifiedServer(options: UnifiedServerOptions): Promis
         // Proxy handled the request
         return result;
       }
+
+      appLogger.debug("Unified server returned 404 for unmatched proxy request", {
+        method: c.req.method,
+        path: c.req.path,
+      });
 
       // No matching route in proxy engine
       return c.notFound();

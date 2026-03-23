@@ -12,6 +12,7 @@ import {
   HealthAwareLoadBalancer,
   type LoadBalancingAlgorithm,
 } from "./load-balancer.js";
+import { createLogger, getRequestId, type AppLogger } from "../utils/debug-logger.js";
 
 /**
  * Options for creating ProxyEngine
@@ -43,13 +44,20 @@ export class ProxyEngine {
 
   // Health status: targetId -> healthy boolean
   private healthStatus: Map<string, boolean> = new Map();
+  private logger: AppLogger;
 
-  constructor(db: DatabaseService) {
+  constructor(
+    db: DatabaseService,
+    options?: {
+      logger?: AppLogger;
+    },
+  ) {
     this.serviceRepo = new ServiceRepository(db);
     this.routeRepo = new RouteRepository(db);
     this.upstreamRepo = new UpstreamRepository(db);
     this.targetRepo = new TargetRepository(db);
     this.routeMatcher = new RouteMatcher();
+    this.logger = options?.logger || createLogger({ scope: "proxy-engine" });
   }
 
   /**
@@ -206,7 +214,22 @@ export class ProxyEngine {
    * Handle Hono context - main entry point for proxy requests
    */
   async handle(c: Context): Promise<Response | null> {
-    const handler = new ProxyRequestHandler((this.serviceRepo as any).db as DatabaseService);
-    return handler.handleRequest(c.req.raw);
+    const requestId = getRequestId(c.req.raw);
+    const requestLogger = this.logger.child("request");
+    const handler = new ProxyRequestHandler((this.serviceRepo as any).db as DatabaseService, {
+      logger: requestLogger,
+      requestId,
+    });
+    const response = await handler.handleRequest(c.req.raw);
+
+    if (!response) {
+      requestLogger.debug("Proxy engine returned no response", {
+        requestId,
+        method: c.req.method,
+        path: c.req.path,
+      });
+    }
+
+    return response;
   }
 }

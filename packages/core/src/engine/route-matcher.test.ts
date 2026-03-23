@@ -63,6 +63,22 @@ describe("RouteMatcher", () => {
       expect(result?.id).toBe(route.id);
     });
 
+    test("treats a static path as a prefix match for nested paths", async () => {
+      const route = createRoute({ paths: ["/httpbin"] });
+      const routes = [route];
+      const request = new Request("http://example.com/httpbin/anything");
+      const result = await matcher.match(routes, request);
+      expect(result?.id).toBe(route.id);
+    });
+
+    test("does not treat a static path as a loose string prefix", async () => {
+      const route = createRoute({ paths: ["/httpbin"] });
+      const routes = [route];
+      const request = new Request("http://example.com/httpbinx/anything");
+      const result = await matcher.match(routes, request);
+      expect(result).toBeNull();
+    });
+
     test("matches route by method", async () => {
       const route = createRoute({ paths: ["/api"], methods: ["POST"] });
       const routes = [route];
@@ -175,6 +191,23 @@ describe("RouteMatcher", () => {
       const request = new Request("http://example.com/api/test");
       const result = await matcher.match(routes, request);
       // Both routes match, but exact path (30 points) should score higher than prefix (20 points)
+      expect(result?.id).toBe("exact");
+    });
+
+    test("exact static path match scores higher than an implicit prefix match", async () => {
+      const exactRoute = createRoute({
+        id: "exact",
+        name: "exact-route",
+        paths: ["/httpbin/anything"],
+      });
+      const prefixRoute = createRoute({
+        id: "prefix",
+        name: "prefix-route",
+        paths: ["/httpbin"],
+      });
+      const routes = [prefixRoute, exactRoute];
+      const request = new Request("http://example.com/httpbin/anything");
+      const result = await matcher.match(routes, request);
       expect(result?.id).toBe("exact");
     });
 

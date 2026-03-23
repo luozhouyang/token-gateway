@@ -6,6 +6,16 @@ import type { Route } from "../storage/schema.js";
  */
 export interface RouteMatchResult {
   isExact: boolean;
+  matchedPath: string;
+  pathPattern: string;
+}
+
+type PathMatcher = ReturnType<typeof match>;
+
+interface CachedPathMatcher {
+  exactMatcher: PathMatcher;
+  isPrefixPattern: boolean;
+  isStaticPattern: boolean;
 }
 
 /**
@@ -18,7 +28,7 @@ export interface RouteMatchResult {
  */
 export class RouteMatcher {
   // Path matcher cache: pathPattern -> matcher function
-  private pathMatchers: Map<string, ReturnType<typeof match>> = new Map();
+  private pathMatchers: Map<string, CachedPathMatcher> = new Map();
 
   /**
    * Match incoming request to a route
@@ -85,7 +95,7 @@ export class RouteMatcher {
 
     // Path matching
     if (route.paths && route.paths.length > 0) {
-      const pathMatch = this.matchPath(route.paths, url.pathname);
+      const pathMatch = this.matchRoutePath(route.paths, url.pathname);
       if (!pathMatch) return 0;
       // Exact match scores higher than prefix match
       score += pathMatch.isExact ? 30 : 20;
@@ -104,16 +114,37 @@ export class RouteMatcher {
   /**
    * Match path against route path patterns using path-to-regexp
    */
+  matchRoutePath(routePaths: string[] | null, requestPath: string): RouteMatchResult | null {
+    if (!routePaths || routePaths.length === 0) {
+      return null;
+    }
+
+    return this.matchPath(routePaths, requestPath);
+  }
+
   private matchPath(routePaths: string[], requestPath: string): RouteMatchResult | null {
     for (const pathPattern of routePaths) {
-      const { matcher, isPrefix } = this.getPathMatcher(pathPattern);
-      const result = matcher(requestPath);
+      const { exactMatcher, isPrefixPattern, isStaticPattern } = this.getPathMatcher(pathPattern);
+      const exactResult = exactMatcher(requestPath);
 
-      if (result) {
-        // Exact match: pattern is not a prefix pattern and full path matches
-        // Prefix match: pattern is a prefix pattern (ends with / or /*)
-        const isExact = !isPrefix && result.path === requestPath;
-        return { isExact };
+      if (exactResult) {
+        return {
+          isExact: exactResult.path === requestPath,
+          matchedPath: exactResult.path,
+          pathPattern,
+        };
+      }
+
+      const matchedPath = this.matchPrefixPath(pathPattern, requestPath, {
+        isPrefixPattern,
+        isStaticPattern,
+      });
+      if (matchedPath) {
+        return {
+          isExact: false,
+          matchedPath,
+          pathPattern,
+        };
       }
     }
     return null;
@@ -123,26 +154,80 @@ export class RouteMatcher {
    * Get or create a path matcher with caching
    * Returns both the matcher and whether it's a prefix pattern
    */
-  private getPathMatcher(pathPattern: string): {
-    matcher: ReturnType<typeof match>;
-    isPrefix: boolean;
-  } {
+  private getPathMatcher(pathPattern: string): CachedPathMatcher {
     const cached = this.pathMatchers.get(pathPattern);
     if (cached) {
-      return { matcher: cached, isPrefix: pathPattern.endsWith("/") || pathPattern.endsWith("/*") };
+      return cached;
     }
 
-    // Convert pattern: if ends with /, treat as prefix match by appending *splat (v8 syntax)
-    const isPrefixPattern = pathPattern.endsWith("/") && !pathPattern.endsWith("*");
-    const normalizedPattern = isPrefixPattern ? pathPattern + "*splat" : pathPattern;
-
-    const matcher = match(normalizedPattern, { decode: decodeURIComponent });
-    this.pathMatchers.set(pathPattern, matcher);
-
-    return {
-      matcher,
-      isPrefix: isPrefixPattern || pathPattern.endsWith("/*"),
+    const exactMatcher = match(this.normalizeExactPattern(pathPattern), {
+      decode: decodeURIComponent,
+    });
+    const cachedMatcher = {
+      exactMatcher,
+      isPrefixPattern: pathPattern.endsWith("/") || pathPattern.endsWith("/*"),
+      isStaticPattern: this.isStaticPathPattern(pathPattern),
     };
+    this.pathMatchers.set(pathPattern, cachedMatcher);
+
+    return cachedMatcher;
+  }
+
+  private normalizeExactPattern(pathPattern: string): string {
+    if (pathPattern.endsWith("/*")) {
+      return `${pathPattern}splat`;
+    }
+
+    return pathPattern;
+  }
+
+  private isStaticPathPattern(pathPattern: string): boolean {
+    return !/[:*{}()[\]\\+?!]/.test(pathPattern);
+  }
+
+  private matchPrefixPath(
+    pathPattern: string,
+    requestPath: string,
+    options: {
+      isPrefixPattern: boolean;
+      isStaticPattern: boolean;
+    },
+  ): string | null {
+    if (pathPattern === "/") {
+      return requestPath.startsWith("/") ? "/" : null;
+    }
+
+    if (pathPattern.endsWith("/*")) {
+      return this.matchStaticPrefix(pathPattern.slice(0, -2), requestPath);
+    }
+
+    if (pathPattern.endsWith("/")) {
+      const basePath = pathPattern.slice(0, -1);
+
+      if (requestPath === pathPattern) {
+        return pathPattern;
+      }
+
+      return this.matchStaticPrefix(basePath, requestPath);
+    }
+
+    if (options.isStaticPattern || options.isPrefixPattern) {
+      return this.matchStaticPrefix(pathPattern, requestPath);
+    }
+
+    return null;
+  }
+
+  private matchStaticPrefix(basePath: string, requestPath: string): string | null {
+    if (basePath.length === 0) {
+      return requestPath.startsWith("/") ? "/" : null;
+    }
+
+    if (requestPath.startsWith(`${basePath}/`)) {
+      return basePath;
+    }
+
+    return null;
   }
 
   /**

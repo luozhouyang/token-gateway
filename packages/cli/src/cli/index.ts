@@ -58,6 +58,11 @@ program
   .option("-p, --port <port>", "Server port", "8080")
   .option("--db <path>", "Database file path")
   .option("--ui-dist <path>", "Web UI dist directory path")
+  .option(
+    "--log-level <level>",
+    "Runtime log level (debug, info, warn, error)",
+    process.env.TOKEN_GATEWAY_LOG_LEVEL || "info",
+  )
   .option("--no-ui", "Disable Web UI (Admin API only)")
   .action(async (options) => {
     let database: DatabaseService | undefined;
@@ -105,6 +110,7 @@ program
         enableCors: true,
         enableLogger: true,
         enableCompress: true,
+        logLevel: options.logLevel,
       });
     } catch (error) {
       database?.close();
