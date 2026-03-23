@@ -9,6 +9,7 @@ import type {
   Plugin as PluginBinding,
   Credential,
 } from "../storage/schema.js";
+import type { PluginInstance } from "../plugins/types.js";
 import type {
   ApiSuccessResponse,
   ApiErrorResponse,
@@ -104,13 +105,13 @@ export function toConsumerResponse(consumer: Consumer): ConsumerResponse {
   };
 }
 
-export function toPluginResponse(plugin: PluginBinding): PluginResponse {
+export function toPluginResponse(plugin: PluginBinding | PluginInstance): PluginResponse {
   return {
     id: plugin.id,
     name: plugin.name,
-    serviceId: plugin.serviceId,
-    routeId: plugin.routeId,
-    consumerId: plugin.consumerId,
+    serviceId: plugin.serviceId ?? null,
+    routeId: plugin.routeId ?? null,
+    consumerId: plugin.consumerId ?? null,
     config: plugin.config as Record<string, unknown> | null,
     enabled: plugin.enabled ?? true,
     tags: plugin.tags as string[],

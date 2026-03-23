@@ -34,6 +34,7 @@ export function createPluginTestContext(overrides?: Partial<PluginContext>): Plu
     target: overrides?.target,
     plugin,
     config: overrides?.config ?? plugin.config ?? {},
+    pluginStorage: overrides?.pluginStorage,
     clientRequest,
     request,
     response,

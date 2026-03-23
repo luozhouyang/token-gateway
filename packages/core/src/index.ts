@@ -23,6 +23,8 @@ export { PluginManager } from "./plugins/plugin-manager.js";
 export { PluginLoader } from "./plugins/plugin-loader.js";
 export * from "./plugins/types.js";
 export * from "./plugins/runtime.js";
+export * from "./plugins/storage-context.js";
+export * from "./plugins/plugin-migration-runner.js";
 
 // Engine
 export { ProxyEngine, type ProxyEngineOptions } from "./engine/proxy-engine.js";

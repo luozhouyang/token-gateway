@@ -1,8 +1,12 @@
-import { describe, expect, test, vi } from "vite-plus/test";
+import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { LoggerPlugin } from "./logger.js";
 import { createPluginTestContext } from "../test-context.js";
 
 describe("LoggerPlugin", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   test("logs request details in debug mode during access phase", async () => {
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
     const ctx = createPluginTestContext({

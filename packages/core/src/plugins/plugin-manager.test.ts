@@ -8,7 +8,7 @@ import { createPluginTestContext } from "./test-context.js";
 import type { PluginDefinition, PluginInstance } from "./types.js";
 import { DatabaseService } from "../storage/database.js";
 import { runMigrations } from "../storage/migrations.js";
-import { plugins } from "../storage/schema.js";
+import { plugins, routes, services } from "../storage/schema.js";
 
 describe("PluginLoader", () => {
   let loader: PluginLoader;
@@ -120,6 +120,22 @@ describe("PluginManager", () => {
 
   test("resolves the most specific binding for a plugin name", async () => {
     const dbClient = db.getDrizzleDb();
+    dbClient
+      .insert(services)
+      .values({
+        id: "service-1",
+        name: "service-1",
+      })
+      .run();
+    dbClient
+      .insert(routes)
+      .values({
+        id: "route-1",
+        name: "route-1",
+        serviceId: "service-1",
+        paths: ["/route-1"],
+      })
+      .run();
     dbClient
       .insert(plugins)
       .values([

@@ -13,6 +13,7 @@ import { PluginLoader } from "./plugin-loader.js";
 import { plugins } from "../storage/schema.js";
 import { toResponseState } from "./runtime.js";
 import { eq } from "drizzle-orm";
+import { createPluginStorageContext } from "./storage-context.js";
 
 export interface PluginResolutionContext {
   routeId?: string | null;
@@ -26,6 +27,7 @@ export class PluginManager {
   private readonly loader: PluginLoader;
   private readonly customPlugins = new Map<string, PluginDefinition>();
   private readonly pluginDefsCache = new Map<string, PluginDefinition>();
+  private readonly pluginStorageCache = new Map<string, unknown>();
   private allEnabledInstancesCache: PluginInstance[] | null = null;
 
   constructor(db: DatabaseService) {
@@ -37,11 +39,13 @@ export class PluginManager {
   registerPlugin(plugin: PluginDefinition): void {
     this.customPlugins.set(plugin.name, plugin);
     this.pluginDefsCache.delete(plugin.name);
+    this.pluginStorageCache.delete(plugin.name);
   }
 
   unregisterPlugin(name: string): void {
     this.customPlugins.delete(name);
     this.pluginDefsCache.delete(name);
+    this.pluginStorageCache.delete(name);
   }
 
   async getPluginInstancesForRoute(routeId: string, serviceId?: string): Promise<PluginInstance[]> {
@@ -101,12 +105,13 @@ export class PluginManager {
     enabled?: boolean;
     tags?: string[];
   }): Promise<PluginInstance> {
+    const config = await this.validateAndNormalizeConfig(input.name, input.config);
     const binding = await this.pluginRepo.create({
       name: input.name,
       serviceId: input.serviceId,
       routeId: input.routeId,
       consumerId: input.consumerId,
-      config: input.config,
+      config,
       enabled: input.enabled ?? true,
       tags: input.tags ?? [],
     });
@@ -127,8 +132,12 @@ export class PluginManager {
     pluginId: string,
     updates: {
       name?: string;
+      serviceId?: string | null;
+      routeId?: string | null;
+      consumerId?: string | null;
       config?: Record<string, unknown>;
       enabled?: boolean;
+      tags?: string[];
     },
   ): Promise<PluginInstance | null> {
     const binding = await this.pluginRepo.findById(pluginId);
@@ -136,10 +145,19 @@ export class PluginManager {
       return null;
     }
 
+    const targetName = updates.name ?? binding.name;
+    const config = await this.validateAndNormalizeConfig(
+      targetName,
+      updates.config ?? ((binding.config as Record<string, unknown>) || {}),
+    );
     const updated = await this.pluginRepo.update(pluginId, {
-      name: updates.name,
-      config: updates.config,
+      name: targetName,
+      serviceId: updates.serviceId,
+      routeId: updates.routeId,
+      consumerId: updates.consumerId,
+      config,
       enabled: updates.enabled,
+      tags: updates.tags,
     });
 
     this.invalidateCache();
@@ -165,6 +183,7 @@ export class PluginManager {
       ctx.phase = phase;
       ctx.plugin = instance;
       ctx.config = instance.config || {};
+      ctx.pluginStorage = this.getPluginStorage(pluginDef);
 
       const result = await handler(ctx);
       return normalizeHandlerResult(result);
@@ -318,6 +337,11 @@ export class PluginManager {
 
   private async bindingToInstance(binding: PluginBinding): Promise<PluginInstance> {
     const pluginDef = await this.loadPluginDef(binding.name);
+    const config = await this.normalizeInstanceConfig(
+      binding.name,
+      (binding.config as Record<string, unknown>) || {},
+      pluginDef,
+    );
 
     return {
       id: binding.id,
@@ -325,7 +349,7 @@ export class PluginManager {
       serviceId: binding.serviceId,
       routeId: binding.routeId,
       consumerId: binding.consumerId,
-      config: (binding.config as Record<string, unknown>) || {},
+      config,
       enabled: binding.enabled ?? true,
       tags: (binding.tags as string[]) ?? [],
       priority: pluginDef?.priority ?? 0,
@@ -345,6 +369,46 @@ export class PluginManager {
       default:
         return null;
     }
+  }
+
+  private getPluginStorage(plugin: PluginDefinition): unknown {
+    if (this.pluginStorageCache.has(plugin.name)) {
+      return this.pluginStorageCache.get(plugin.name);
+    }
+
+    if (!plugin.createStorage) {
+      return undefined;
+    }
+
+    const storage = plugin.createStorage(
+      createPluginStorageContext(this.db.getRawDatabase(), plugin),
+    );
+    this.pluginStorageCache.set(plugin.name, storage);
+    return storage;
+  }
+
+  private async validateAndNormalizeConfig(
+    name: string,
+    config: Record<string, unknown> | null | undefined,
+  ): Promise<Record<string, unknown>> {
+    const pluginDef = await this.loadPluginDef(name);
+    if (!pluginDef) {
+      throw new Error(`Unknown plugin: ${name}`);
+    }
+
+    return this.normalizeInstanceConfig(name, config ?? {}, pluginDef);
+  }
+
+  private async normalizeInstanceConfig(
+    _name: string,
+    config: Record<string, unknown>,
+    pluginDef: PluginDefinition | null,
+  ): Promise<Record<string, unknown>> {
+    if (!pluginDef?.configSchema) {
+      return config;
+    }
+
+    return pluginDef.configSchema.parse(config);
   }
 }
 

@@ -108,6 +108,34 @@ describe("CredentialRepository", () => {
     expect(credentials.every((c) => c.consumerId === consumer1.id)).toBe(true);
   });
 
+  test("finds key-auth credentials by key", async () => {
+    const consumer = await consumerRepo.create({
+      username: "lookup-user",
+      customId: "lookup-custom-id",
+      tags: [] as string[],
+    });
+
+    await credentialRepo.create({
+      consumerId: consumer.id,
+      credentialType: "key-auth",
+      credential: { key: "lookup-key" },
+      tags: [] as string[],
+    });
+
+    await credentialRepo.create({
+      consumerId: consumer.id,
+      credentialType: "jwt",
+      credential: { key: "lookup-key" },
+      tags: [] as string[],
+    });
+
+    const credential = await credentialRepo.findKeyAuthByKey("lookup-key");
+
+    expect(credential).toBeDefined();
+    expect(credential?.credentialType).toBe("key-auth");
+    expect(credential?.credential).toEqual({ key: "lookup-key" });
+  });
+
   test("finds all credentials", async () => {
     const consumer = await consumerRepo.create({
       username: "test-user",

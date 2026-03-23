@@ -7,6 +7,7 @@ import { DatabaseService } from "./storage/database.js";
 import { createAdminApi, type AdminApiOptions } from "./admin-api/server.js";
 import { createStaticServer, type StaticServerOptions } from "./static-server.js";
 import { ProxyEngine, type ProxyEngineOptions } from "./engine/proxy-engine.js";
+import { PluginManager } from "./plugins/plugin-manager.js";
 import { createLogger, type LogLevel } from "./utils/debug-logger.js";
 
 /**
@@ -51,6 +52,7 @@ export async function createUnifiedServer(options: UnifiedServerOptions): Promis
   const sharedDb =
     options.adminApi?.db ??
     (options.proxy ? new DatabaseService(options.proxy.databasePath) : null);
+  const sharedPluginManager = sharedDb ? new PluginManager(sharedDb) : undefined;
 
   // ========== 1. Global Middleware ==========
   if (options.enableLogger !== false) {
@@ -76,6 +78,7 @@ export async function createUnifiedServer(options: UnifiedServerOptions): Promis
     const adminApi = createAdminApi({
       ...options.adminApi,
       db: sharedDb,
+      pluginManager: sharedPluginManager,
       enableCors: false,
       enableLogger: false,
       logLevel: options.logLevel,
@@ -99,6 +102,7 @@ export async function createUnifiedServer(options: UnifiedServerOptions): Promis
   if (options.proxy && sharedDb) {
     const proxyEngine = new ProxyEngine(sharedDb, {
       logger: appLogger.child("proxy"),
+      pluginManager: sharedPluginManager,
     });
 
     // Create a handler that integrates with Hono

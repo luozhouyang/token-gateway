@@ -133,17 +133,21 @@ describe("Plugins Routes", () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: "unique-plugin",
-          config: {},
+          name: "request-transformer",
+          config: {
+            add: {
+              headers: ["x-filtered:true"],
+            },
+          },
         }),
       });
 
-      const response = await ctx.app.request("/admin/plugins?name=unique");
+      const response = await ctx.app.request("/admin/plugins?name=request");
 
       expect(response.status).toBe(200);
       const json = await response.json();
       expect(json.data).toHaveLength(1);
-      expect(json.data[0].name).toBe("unique-plugin");
+      expect(json.data[0].name).toBe("request-transformer");
     });
 
     test("filters by enabled status", async () => {
@@ -151,8 +155,12 @@ describe("Plugins Routes", () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: "enabled-plugin",
-          config: {},
+          name: "request-transformer",
+          config: {
+            add: {
+              headers: ["x-enabled:true"],
+            },
+          },
           enabled: true,
         }),
       });
@@ -161,8 +169,12 @@ describe("Plugins Routes", () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: "disabled-plugin",
-          config: {},
+          name: "response-transformer",
+          config: {
+            add: {
+              headers: ["x-disabled:true"],
+            },
+          },
           enabled: false,
         }),
       });
@@ -172,7 +184,7 @@ describe("Plugins Routes", () => {
       expect(response.status).toBe(200);
       const json = await response.json();
       expect(json.data).toHaveLength(1);
-      expect(json.data[0].name).toBe("enabled-plugin");
+      expect(json.data[0].name).toBe("request-transformer");
     });
   });
 
@@ -182,8 +194,12 @@ describe("Plugins Routes", () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: "test-plugin",
-          config: { key: "value" },
+          name: "request-transformer",
+          config: {
+            add: {
+              headers: ["x-created:true"],
+            },
+          },
         }),
       });
       const created = await createResponse.json();
@@ -193,7 +209,7 @@ describe("Plugins Routes", () => {
       expect(response.status).toBe(200);
       const json = await response.json();
       expect(json.data.id).toBe(created.data.id);
-      expect(json.data.name).toBe("test-plugin");
+      expect(json.data.name).toBe("request-transformer");
     });
 
     test("returns 404 for non-existent plugin", async () => {
@@ -212,8 +228,12 @@ describe("Plugins Routes", () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: "test-plugin",
-          config: { key: "old-value" },
+          name: "request-transformer",
+          config: {
+            add: {
+              headers: ["x-test:old-value"],
+            },
+          },
           enabled: true,
         }),
       });
@@ -223,14 +243,22 @@ describe("Plugins Routes", () => {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          config: { key: "new-value" },
+          config: {
+            add: {
+              headers: ["x-test:new-value"],
+            },
+          },
           enabled: false,
         }),
       });
 
       expect(response.status).toBe(200);
       const json = await response.json();
-      expect(json.data.config).toEqual({ key: "new-value" });
+      expect(json.data.config).toEqual({
+        add: {
+          headers: ["x-test:new-value"],
+        },
+      });
       expect(json.data.enabled).toBe(false);
     });
 
@@ -253,8 +281,10 @@ describe("Plugins Routes", () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: "test-plugin",
-          config: {},
+          name: "cors",
+          config: {
+            origins: ["*"],
+          },
         }),
       });
       const created = await createResponse.json();

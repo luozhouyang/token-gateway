@@ -80,7 +80,7 @@ export function createAdminApi(options: AdminApiOptions): Hono {
   const targetsRoutes = createTargetsRoutes(options.db);
   const consumersRoutes = createConsumersRoutes(options.db);
   const credentialsRoutes = createCredentialsRoutes(options.db);
-  const pluginsRoutes = createPluginsRoutes(options.db);
+  const pluginsRoutes = createPluginsRoutes(options.db, options.pluginManager);
 
   // Mount routes at root
   // Note: targets and credentials include parent paths in their definitions

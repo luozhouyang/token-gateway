@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index, primaryKey } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 import type { InferSelectModel } from "drizzle-orm";
 
@@ -17,6 +17,8 @@ export type Target = InferSelectModel<typeof targets>;
 export type Consumer = InferSelectModel<typeof consumers>;
 export type Plugin = InferSelectModel<typeof plugins>;
 export type Credential = InferSelectModel<typeof credentials>;
+export type PluginBundle = InferSelectModel<typeof pluginBundles>;
+export type AppliedPluginMigration = InferSelectModel<typeof pluginMigrations>;
 
 // Input types for creating entities - all fields optional except 'name' (where required)
 export type CreateServiceInput = Partial<Omit<Service, "id" | "createdAt" | "updatedAt">> & {
@@ -180,6 +182,34 @@ export const credentials = sqliteTable(
   },
   (table) => ({
     idx_credentials_consumer_id: index("idx_credentials_consumer_id").on(table.consumerId),
+  }),
+);
+
+export const pluginBundles = sqliteTable("plugin_bundles", {
+  name: text("name").primaryKey(),
+  version: text("version").notNull(),
+  checksum: text("checksum").notNull(),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
+});
+
+export const pluginMigrations = sqliteTable(
+  "plugin_migrations",
+  {
+    pluginName: text("plugin_name")
+      .notNull()
+      .references(() => pluginBundles.name, {
+        onDelete: "cascade",
+      }),
+    migrationId: text("migration_id").notNull(),
+    checksum: text("checksum").notNull(),
+    appliedAt: text("applied_at").$defaultFn(() => new Date().toISOString()),
+  },
+  (table) => ({
+    pk: primaryKey({
+      columns: [table.pluginName, table.migrationId],
+    }),
+    idxPluginMigrationsPluginName: index("idx_plugin_migrations_plugin_name").on(table.pluginName),
   }),
 );
 

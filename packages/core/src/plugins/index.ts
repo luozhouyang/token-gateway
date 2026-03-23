@@ -2,6 +2,8 @@
 
 export * from "./types.js";
 export * from "./runtime.js";
+export * from "./storage-context.js";
+export * from "./plugin-migration-runner.js";
 export { PluginLoader } from "./plugin-loader.js";
 export { PluginManager } from "./plugin-manager.js";
 

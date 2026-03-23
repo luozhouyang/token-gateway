@@ -61,6 +61,11 @@ export function createCredentialsRoutes(db: DatabaseService) {
         throw ApiError.notFound("Consumer");
       }
 
+      await validateCredentialPayload(credentialRepo, {
+        credentialType: body.credentialType,
+        credential: body.credential,
+      });
+
       const credential = await credentialRepo.create({
         consumerId,
         credentialType: body.credentialType,
@@ -97,9 +102,18 @@ export function createCredentialsRoutes(db: DatabaseService) {
         throw ApiError.notFound("Credential");
       }
 
+      const resolvedCredentialType = body.credentialType ?? credential.credentialType;
+      const resolvedCredential =
+        body.credential ?? (credential.credential as Record<string, unknown>);
+      await validateCredentialPayload(credentialRepo, {
+        credentialType: resolvedCredentialType,
+        credential: resolvedCredential,
+        currentCredentialId: credential.id,
+      });
+
       const updated = await credentialRepo.update(credentialId, {
-        credentialType: body.credentialType,
-        credential: body.credential,
+        credentialType: resolvedCredentialType,
+        credential: resolvedCredential,
         tags: body.tags ?? (credential.tags as string[]),
       });
 
@@ -121,4 +135,27 @@ export function createCredentialsRoutes(db: DatabaseService) {
   });
 
   return routes;
+}
+
+async function validateCredentialPayload(
+  credentialRepo: CredentialRepository,
+  input: {
+    credentialType: string;
+    credential: Record<string, unknown>;
+    currentCredentialId?: string;
+  },
+): Promise<void> {
+  if (input.credentialType !== "key-auth") {
+    return;
+  }
+
+  const key = input.credential.key;
+  if (typeof key !== "string" || key.trim().length === 0) {
+    throw ApiError.badRequest("Key-auth credentials require a non-empty credential.key");
+  }
+
+  const existingCredential = await credentialRepo.findKeyAuthByKey(key);
+  if (existingCredential && existingCredential.id !== input.currentCredentialId) {
+    throw ApiError.conflict("Key-auth credential key already exists");
+  }
 }

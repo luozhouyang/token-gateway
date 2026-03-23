@@ -121,4 +121,11 @@ export class PluginLoader {
   listBuiltins(): string[] {
     return Array.from(this.builtinPlugins.keys());
   }
+
+  /**
+   * List all built-in plugin definitions
+   */
+  listBuiltinDefinitions(): PluginDefinition[] {
+    return Array.from(this.builtinPlugins.values());
+  }
 }

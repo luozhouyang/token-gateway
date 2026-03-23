@@ -135,11 +135,7 @@ export class ProxyRequestHandler {
       uriCaptures: pathMatch?.captures ?? {},
     });
 
-    const accessResult = await this.pluginManager.executePhase(
-      "access",
-      pluginInstances,
-      pluginCtx,
-    );
+    const accessResult = await this.executeAccessPhase(pluginInstances, pluginCtx);
     if (accessResult.error) {
       pluginCtx.response = await toResponseState(
         this.createGatewayErrorResponse("Plugin access phase failed", requestId),
@@ -200,8 +196,12 @@ export class ProxyRequestHandler {
     pluginInstances: PluginInstance[],
     pluginCtx: PluginContext,
   ): Promise<Response> {
-    await this.pluginManager.executePhase("response", pluginInstances, pluginCtx);
-    await this.pluginManager.executePhase("log", pluginInstances, pluginCtx);
+    const phasePluginInstances = await this.resolvePluginInstancesForContext(
+      pluginCtx,
+      pluginInstances,
+    );
+    await this.pluginManager.executePhase("response", phasePluginInstances, pluginCtx);
+    await this.pluginManager.executePhase("log", phasePluginInstances, pluginCtx);
 
     if (!pluginCtx.response) {
       return this.createGatewayErrorResponse(
@@ -212,6 +212,68 @@ export class ProxyRequestHandler {
 
     pluginCtx.response.headers.set("x-request-id", pluginCtx.requestId);
     return toResponse(pluginCtx.response);
+  }
+
+  private async executeAccessPhase(
+    pluginInstances: PluginInstance[],
+    pluginCtx: PluginContext,
+  ): Promise<{ stopped: boolean; response?: Response; error?: Error }> {
+    let resolvedInstances = pluginInstances;
+    let resolvedConsumerId = pluginCtx.consumer?.id ?? null;
+    const executedPluginIds = new Set<string>();
+
+    while (true) {
+      let shouldRecompute = false;
+
+      for (const instance of resolvedInstances) {
+        if (!instance.enabled || executedPluginIds.has(instance.id)) {
+          continue;
+        }
+
+        const result = await this.pluginManager.executePlugin("access", instance, pluginCtx);
+        executedPluginIds.add(instance.id);
+
+        if (result.error || result.stopped || result.response) {
+          return result;
+        }
+
+        const currentConsumerId = pluginCtx.consumer?.id ?? null;
+        if (
+          currentConsumerId &&
+          currentConsumerId !== resolvedConsumerId &&
+          pluginCtx.route &&
+          pluginCtx.service
+        ) {
+          resolvedConsumerId = currentConsumerId;
+          resolvedInstances = await this.pluginManager.resolvePluginInstances({
+            routeId: pluginCtx.route.id,
+            serviceId: pluginCtx.service.id,
+            consumerId: currentConsumerId,
+          });
+          shouldRecompute = true;
+          break;
+        }
+      }
+
+      if (!shouldRecompute) {
+        return { stopped: false };
+      }
+    }
+  }
+
+  private async resolvePluginInstancesForContext(
+    pluginCtx: PluginContext,
+    fallbackInstances: PluginInstance[],
+  ): Promise<PluginInstance[]> {
+    if (!pluginCtx.route || !pluginCtx.service) {
+      return fallbackInstances;
+    }
+
+    return this.pluginManager.resolvePluginInstances({
+      routeId: pluginCtx.route.id,
+      serviceId: pluginCtx.service.id,
+      consumerId: pluginCtx.consumer?.id ?? null,
+    });
   }
 
   private createPluginContext(input: {
@@ -238,6 +300,7 @@ export class ProxyRequestHandler {
         enabled: true,
       },
       config: {},
+      pluginStorage: undefined,
       clientRequest: input.clientRequest,
       request: input.upstreamRequest,
       response: undefined,

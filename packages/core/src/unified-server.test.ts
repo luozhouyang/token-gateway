@@ -1,9 +1,7 @@
-import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
-import { createServer, type Server } from "node:http";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { AddressInfo } from "node:net";
 import { DatabaseService } from "./storage/database.js";
 import { runMigrations } from "./storage/migrations.js";
 import { createUnifiedServer } from "./unified-server.js";
@@ -13,10 +11,8 @@ describe("unified-server", () => {
   let dbPath: string;
   let db: DatabaseService;
   let uiDir: string;
-  let upstreamServer: Server;
-  let upstreamPort: number;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     tempDir = mkdtempSync(path.join(tmpdir(), "minigateway-unified-server-test-"));
     dbPath = path.join(tempDir, "test.db");
     runMigrations(dbPath);
@@ -29,46 +25,35 @@ describe("unified-server", () => {
       "<!doctype html><html><body>MiniGateway E2E</body></html>",
       "utf-8",
     );
-
-    upstreamServer = createServer(async (request, response) => {
-      const body = await readRequestBody(request);
-
-      response.statusCode = 200;
-      response.setHeader("content-type", "application/json");
-      response.end(
-        JSON.stringify({
-          method: request.method,
-          url: request.url,
-          headers: request.headers,
-          body,
-        }),
-      );
-    });
-
-    await new Promise<void>((resolve) => {
-      upstreamServer.listen(0, "127.0.0.1", () => resolve());
-    });
-
-    upstreamPort = (upstreamServer.address() as AddressInfo).port;
   });
 
-  afterEach(async () => {
-    await new Promise<void>((resolve, reject) => {
-      upstreamServer.close((error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-
-        resolve();
-      });
-    });
-
+  afterEach(() => {
+    vi.restoreAllMocks();
     db.close();
     rmSync(tempDir, { recursive: true, force: true });
   });
 
   test("serves the web UI and proxies requests configured through the admin API", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const request = input instanceof Request ? input : new Request(input);
+      const body = await request.text();
+
+      return new Response(
+        JSON.stringify({
+          method: request.method,
+          url: new URL(request.url).pathname + new URL(request.url).search,
+          headers: Object.fromEntries(request.headers.entries()),
+          body,
+        }),
+        {
+          status: 200,
+          headers: {
+            "content-type": "application/json",
+          },
+        },
+      );
+    });
+
     const app = await createUnifiedServer({
       port: 0,
       adminApi: {
@@ -102,7 +87,7 @@ describe("unified-server", () => {
       },
       body: JSON.stringify({
         name: "httpbin",
-        url: `http://127.0.0.1:${upstreamPort}`,
+        url: "http://upstream.internal",
       }),
     });
 
@@ -132,7 +117,8 @@ describe("unified-server", () => {
     });
 
     expect(proxiedResponse.status).toBe(200);
-    expect(proxiedResponse.headers.get("access-control-allow-origin")).toBe("*");
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(proxiedResponse.headers.get("access-control-allow-origin")).toBeNull();
 
     const proxiedBody = (await proxiedResponse.json()) as {
       method: string;
@@ -147,13 +133,3 @@ describe("unified-server", () => {
     expect(proxiedBody.headers["x-forwarded-host"]).toContain("localhost");
   });
 });
-
-async function readRequestBody(request: Parameters<Server["emit"]>[1]): Promise<string> {
-  const chunks: Buffer[] = [];
-
-  for await (const chunk of request) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  }
-
-  return Buffer.concat(chunks).toString("utf-8");
-}

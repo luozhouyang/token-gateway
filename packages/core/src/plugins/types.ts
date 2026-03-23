@@ -1,5 +1,7 @@
 // Plugin system type definitions
 
+import type Database from "better-sqlite3";
+import type { ZodType } from "zod";
 import type { Consumer, Route, Service, Target } from "../entities/types.js";
 import type { AppLogger } from "../utils/debug-logger.js";
 import type { HttpRequestSnapshot, HttpRequestState, HttpResponseState } from "./runtime.js";
@@ -40,6 +42,7 @@ export interface PluginContext {
   target?: Target;
   plugin: PluginInstance;
   config: Record<string, unknown>;
+  pluginStorage?: unknown;
   clientRequest: HttpRequestSnapshot;
   request: HttpRequestState;
   response?: HttpResponseState;
@@ -64,6 +67,20 @@ export type PluginHandler = (
   ctx: PluginContext,
 ) => Promise<PluginHandlerResult | void> | PluginHandlerResult | void;
 
+export interface PluginStorageContext {
+  pluginName: string;
+  pluginVersion: string;
+  rawDb: Database.Database;
+  exec: (sql: string) => void;
+  transaction: <T>(fn: () => T) => T;
+}
+
+export interface PluginMigration {
+  id: string;
+  checksum?: string;
+  up: string | ((ctx: PluginStorageContext) => void);
+}
+
 /**
  * Plugin definition loaded by the runtime.
  */
@@ -72,7 +89,9 @@ export interface PluginDefinition {
   version: string;
   priority?: number;
   phases: PluginPhase[];
-  configSchema?: Record<string, unknown>;
+  configSchema?: ZodType<Record<string, unknown>>;
+  migrations?: PluginMigration[];
+  createStorage?: (ctx: PluginStorageContext) => unknown;
   onAccess?: PluginHandler;
   onResponse?: PluginHandler;
   onLog?: PluginHandler;
@@ -108,6 +127,7 @@ export interface BuiltinPluginConfigs {
     limit: number;
     window: number;
     key?: "ip" | "header" | "consumer";
+    headerName?: string;
     headers?: boolean;
   };
 

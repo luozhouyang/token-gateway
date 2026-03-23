@@ -83,6 +83,45 @@ describe("Credentials Routes", () => {
       expect(json.error).toBeDefined();
       expect(json.error.code).toBe("NOT_FOUND");
     });
+
+    test("returns 400 when key-auth credentials are missing credential.key", async () => {
+      const response = await ctx.app.request(`/admin/consumers/${consumerId}/credentials`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          credentialType: "key-auth",
+          credential: {},
+        }),
+      });
+
+      expect(response.status).toBe(400);
+      const json = await response.json();
+      expect(json.error.code).toBe("BAD_REQUEST");
+    });
+
+    test("returns 409 when a key-auth credential key already exists", async () => {
+      await ctx.app.request(`/admin/consumers/${consumerId}/credentials`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          credentialType: "key-auth",
+          credential: { key: "duplicate-key" },
+        }),
+      });
+
+      const response = await ctx.app.request(`/admin/consumers/${consumerId}/credentials`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          credentialType: "key-auth",
+          credential: { key: "duplicate-key" },
+        }),
+      });
+
+      expect(response.status).toBe(409);
+      const json = await response.json();
+      expect(json.error.code).toBe("CONFLICT");
+    });
   });
 
   describe("GET /admin/consumers/:consumerId/credentials", () => {

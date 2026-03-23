@@ -4,8 +4,15 @@ import Database from "better-sqlite3";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as fs from "node:fs";
+import { PluginLoader } from "../plugins/plugin-loader.js";
+import { runPluginMigrations } from "../plugins/plugin-migration-runner.js";
+import type { PluginDefinition } from "../plugins/types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+export interface RunMigrationsOptions {
+  plugins?: PluginDefinition[];
+}
 
 /**
  * Run database migrations using Drizzle ORM
@@ -13,7 +20,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
  * - Source: src/storage/ -> ../../drizzle
  * - Bundled: dist/storage/ -> ../drizzle
  */
-export function runMigrations(dbPath: string): void {
+export function runMigrations(dbPath: string, options?: RunMigrationsOptions): void {
   const client = new Database(dbPath);
   const db = drizzle(client);
 
@@ -29,7 +36,12 @@ export function runMigrations(dbPath: string): void {
     migrationsFolder = join(__dirname, "../../drizzle");
   }
 
-  migrate(db, { migrationsFolder });
+  try {
+    migrate(db, { migrationsFolder });
 
-  client.close();
+    const pluginDefinitions = options?.plugins ?? new PluginLoader().listBuiltinDefinitions();
+    runPluginMigrations(client, pluginDefinitions);
+  } finally {
+    client.close();
+  }
 }

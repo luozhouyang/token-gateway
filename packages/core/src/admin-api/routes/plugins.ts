@@ -12,10 +12,12 @@ import { toPluginResponse, successResponse, listResponse } from "../responses.js
 import { ApiError } from "../server.js";
 import { PluginBindingRepository } from "../../entities/plugin-binding.js";
 import { DatabaseService } from "../../storage/database.js";
+import { PluginManager } from "../../plugins/plugin-manager.js";
 
-export function createPluginsRoutes(db: DatabaseService) {
+export function createPluginsRoutes(db: DatabaseService, pluginManager?: PluginManager) {
   const routes = new Hono();
   const pluginRepo = new PluginBindingRepository(db);
+  const manager = pluginManager ?? new PluginManager(db);
 
   // List plugins
   routes.get("/", zodValidator("query", paginationSchema.merge(pluginFilterSchema)), async (c) => {
@@ -55,15 +57,17 @@ export function createPluginsRoutes(db: DatabaseService) {
   routes.post("/", zodValidator("json", createPluginSchema), async (c) => {
     const body = c.req.valid("json");
 
-    const plugin = await pluginRepo.create({
-      name: body.name,
-      serviceId: body.serviceId ?? null,
-      routeId: body.routeId ?? null,
-      consumerId: body.consumerId ?? null,
-      config: body.config ?? null,
-      enabled: body.enabled ?? true,
-      tags: body.tags ?? [],
-    });
+    const plugin = await createOrThrowBadRequest(() =>
+      manager.createPlugin({
+        name: body.name,
+        serviceId: body.serviceId ?? undefined,
+        routeId: body.routeId ?? undefined,
+        consumerId: body.consumerId ?? undefined,
+        config: body.config ?? {},
+        enabled: body.enabled ?? true,
+        tags: body.tags ?? [],
+      }),
+    );
 
     return c.json(successResponse(toPluginResponse(plugin)), 201);
   });
@@ -90,15 +94,21 @@ export function createPluginsRoutes(db: DatabaseService) {
       throw ApiError.notFound("Plugin");
     }
 
-    const updated = await pluginRepo.update(id, {
-      name: body.name,
-      serviceId: body.serviceId ?? null,
-      routeId: body.routeId ?? null,
-      consumerId: body.consumerId ?? null,
-      config: body.config ?? null,
-      enabled: body.enabled,
-      tags: body.tags ?? (plugin.tags as string[]),
-    });
+    const updated = await createOrThrowBadRequest(() =>
+      manager.updatePlugin(id, {
+        name: body.name,
+        serviceId: body.serviceId,
+        routeId: body.routeId,
+        consumerId: body.consumerId,
+        config: body.config ?? undefined,
+        enabled: body.enabled,
+        tags: body.tags,
+      }),
+    );
+
+    if (!updated) {
+      throw ApiError.notFound("Plugin");
+    }
 
     return c.json(successResponse(toPluginResponse(updated)));
   });
@@ -112,9 +122,21 @@ export function createPluginsRoutes(db: DatabaseService) {
       throw ApiError.notFound("Plugin");
     }
 
-    await pluginRepo.delete(id);
+    await manager.deletePlugin(id);
     return c.json(successResponse({ deleted: true }), 200);
   });
 
   return routes;
+}
+
+async function createOrThrowBadRequest<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith("Unknown plugin:")) {
+      throw ApiError.badRequest(error.message);
+    }
+
+    throw error;
+  }
 }

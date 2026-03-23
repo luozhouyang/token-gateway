@@ -53,6 +53,7 @@ export class ProxyEngine {
     db: DatabaseService,
     options?: {
       logger?: AppLogger;
+      pluginManager?: PluginManager;
     },
   ) {
     this.db = db;
@@ -62,7 +63,7 @@ export class ProxyEngine {
     this.targetRepo = new TargetRepository(db);
     this.routeMatcher = new RouteMatcher();
     this.logger = options?.logger || createLogger({ scope: "proxy-engine" });
-    this.pluginManager = new PluginManager(db);
+    this.pluginManager = options?.pluginManager ?? new PluginManager(db);
   }
 
   /**
