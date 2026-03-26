@@ -47,8 +47,8 @@
     "@types/react-dom": "^19.2.0",
     "jsdom": "^28.1.0",
     "typescript": "^5.7.2",
-    "vite": "^7.3.1",
-    "vite-plus": "0.1.13",
+    "vite": "^8.0.3",
+    "vite-plus": "0.1.14",
     "vite-tsconfig-paths": "^5.1.4"
   },
   "engines": {
