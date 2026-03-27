@@ -1,7 +1,13 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DetailField,
+  DetailSection,
+  JsonPreview,
+  TagList,
+} from "@/components/resources/DetailSection";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -45,10 +51,10 @@ import {
   stringifyJson,
 } from "@/lib/dashboard-utils";
 import { toast } from "sonner";
-import { Bot, Database, Pencil, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 
-export const Route = createFileRoute("/llm/")({
-  component: LlmResourcesPage,
+export const Route = createFileRoute("/llm/providers/$providerId")({
+  component: LlmProviderDetailPage,
 });
 
 interface ProviderFormState {
@@ -66,7 +72,6 @@ interface ProviderFormState {
 }
 
 interface ModelFormState {
-  providerId: string;
   name: string;
   upstreamModel: string;
   metadata: string;
@@ -89,7 +94,6 @@ const EMPTY_PROVIDER_FORM: ProviderFormState = {
 };
 
 const EMPTY_MODEL_FORM: ModelFormState = {
-  providerId: "",
   name: "",
   upstreamModel: "",
   metadata: "{}",
@@ -97,28 +101,26 @@ const EMPTY_MODEL_FORM: ModelFormState = {
   tags: "",
 };
 
-function LlmResourcesPage() {
+function LlmProviderDetailPage() {
+  const { providerId } = Route.useParams();
   const { settings } = useDashboardSettings();
-  const [providers, setProviders] = useState<LlmProvider[]>([]);
+  const [provider, setProvider] = useState<LlmProvider | null>(null);
   const [models, setModels] = useState<LlmModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [savingProvider, setSavingProvider] = useState(false);
   const [savingModel, setSavingModel] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [providerSearchQuery, setProviderSearchQuery] = useState("");
-  const [modelSearchQuery, setModelSearchQuery] = useState("");
   const [providerDialogOpen, setProviderDialogOpen] = useState(false);
   const [modelDialogOpen, setModelDialogOpen] = useState(false);
-  const [editingProvider, setEditingProvider] = useState<LlmProvider | null>(null);
-  const [editingModel, setEditingModel] = useState<LlmModel | null>(null);
   const [providerFormState, setProviderFormState] =
     useState<ProviderFormState>(EMPTY_PROVIDER_FORM);
   const [modelFormState, setModelFormState] = useState<ModelFormState>(EMPTY_MODEL_FORM);
+  const [editingModel, setEditingModel] = useState<LlmModel | null>(null);
 
   useEffect(() => {
     void loadData();
-  }, []);
+  }, [providerId]);
 
   async function loadData(isRefresh = false) {
     try {
@@ -130,29 +132,28 @@ function LlmResourcesPage() {
         setLoading(true);
       }
 
-      const [providerList, modelList] = await Promise.all([
-        llmProvidersApi.list(),
-        llmModelsApi.list(),
+      const [loadedProvider, loadedModels] = await Promise.all([
+        llmProvidersApi.get(providerId),
+        llmProvidersApi.listModels(providerId),
       ]);
 
-      setProviders(providerList);
-      setModels(modelList);
+      setProvider(loadedProvider);
+      setModels(loadedModels);
     } catch (loadError) {
-      setError(getErrorMessage(loadError, "Failed to load LLM resources"));
+      setError(getErrorMessage(loadError, "Failed to load provider"));
+      setProvider(null);
+      setModels([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }
 
-  function openCreateProviderDialog() {
-    setEditingProvider(null);
-    setProviderFormState(EMPTY_PROVIDER_FORM);
-    setProviderDialogOpen(true);
-  }
+  function openEditProviderDialog() {
+    if (!provider) {
+      return;
+    }
 
-  function openEditProviderDialog(provider: LlmProvider) {
-    setEditingProvider(provider);
     setProviderFormState({
       name: provider.name,
       displayName: provider.displayName || "",
@@ -169,19 +170,15 @@ function LlmResourcesPage() {
     setProviderDialogOpen(true);
   }
 
-  function openCreateModelDialog(providerId = "") {
+  function openCreateModelDialog() {
     setEditingModel(null);
-    setModelFormState({
-      ...EMPTY_MODEL_FORM,
-      providerId,
-    });
+    setModelFormState(EMPTY_MODEL_FORM);
     setModelDialogOpen(true);
   }
 
   function openEditModelDialog(model: LlmModel) {
     setEditingModel(model);
     setModelFormState({
-      providerId: model.providerId,
       name: model.name,
       upstreamModel: model.upstreamModel,
       metadata: stringifyJson(model.metadata),
@@ -193,11 +190,14 @@ function LlmResourcesPage() {
 
   async function handleProviderSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!provider) {
+      return;
+    }
 
     try {
       setSavingProvider(true);
 
-      const payload: Partial<LlmProvider> = {
+      await llmProvidersApi.update(provider.id, {
         name: providerFormState.name.trim(),
         displayName: providerFormState.displayName.trim() || undefined,
         vendor: providerFormState.vendor,
@@ -220,16 +220,9 @@ function LlmResourcesPage() {
           ) || {},
         enabled: providerFormState.enabled,
         tags: parseCommaSeparatedInput(providerFormState.tags),
-      };
+      });
 
-      if (editingProvider) {
-        await llmProvidersApi.update(editingProvider.id, payload);
-        toast.success("LLM provider updated");
-      } else {
-        await llmProvidersApi.create(payload);
-        toast.success("LLM provider created");
-      }
-
+      toast.success("LLM provider updated");
       setProviderDialogOpen(false);
       await loadData(true);
     } catch (saveError) {
@@ -243,12 +236,14 @@ function LlmResourcesPage() {
 
   async function handleModelSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!provider) {
+      return;
+    }
 
     try {
       setSavingModel(true);
 
       const payload: Partial<LlmModel> = {
-        providerId: modelFormState.providerId,
         name: modelFormState.name.trim(),
         upstreamModel: modelFormState.upstreamModel.trim(),
         metadata: parseJsonInput<Record<string, unknown>>(
@@ -263,7 +258,7 @@ function LlmResourcesPage() {
         await llmModelsApi.update(editingModel.id, payload);
         toast.success("LLM model updated");
       } else {
-        await llmModelsApi.create(payload);
+        await llmProvidersApi.createModel(provider.id, payload);
         toast.success("LLM model created");
       }
 
@@ -275,25 +270,6 @@ function LlmResourcesPage() {
       });
     } finally {
       setSavingModel(false);
-    }
-  }
-
-  async function handleDeleteProvider(provider: LlmProvider) {
-    const shouldDelete = await confirmAction(
-      `Delete LLM provider "${provider.name}"? Related models will also be removed.`,
-    );
-    if (!shouldDelete) {
-      return;
-    }
-
-    try {
-      await llmProvidersApi.delete(provider.id);
-      toast.success("LLM provider deleted");
-      await loadData(true);
-    } catch (deleteError) {
-      toast.error("Failed to delete LLM provider", {
-        description: getErrorMessage(deleteError),
-      });
     }
   }
 
@@ -314,71 +290,31 @@ function LlmResourcesPage() {
     }
   }
 
-  const providerNameById = useMemo(
-    () => new Map(providers.map((provider) => [provider.id, provider.name])),
-    [providers],
-  );
-
-  const modelCountByProviderId = useMemo(() => {
-    const counts = new Map<string, number>();
-
-    for (const model of models) {
-      counts.set(model.providerId, (counts.get(model.providerId) || 0) + 1);
-    }
-
-    return counts;
-  }, [models]);
-
-  const filteredProviders = useMemo(() => {
-    const query = providerSearchQuery.trim().toLowerCase();
-    if (!query) {
-      return providers;
-    }
-
-    return providers.filter((provider) => {
-      const haystack = [
-        provider.name,
-        provider.displayName,
-        provider.vendor,
-        provider.protocol,
-        provider.baseUrl,
-        joinCommaSeparated(provider.clients),
-        joinCommaSeparated(provider.tags),
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      return haystack.includes(query);
-    });
-  }, [providerSearchQuery, providers]);
-
-  const filteredModels = useMemo(() => {
-    const query = modelSearchQuery.trim().toLowerCase();
-    if (!query) {
-      return models;
-    }
-
-    return models.filter((model) => {
-      const haystack = [
-        model.name,
-        model.upstreamModel,
-        providerNameById.get(model.providerId),
-        joinCommaSeparated(model.tags),
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      return haystack.includes(query);
-    });
-  }, [modelSearchQuery, models, providerNameById]);
-
-  const enabledProviders = providers.filter((provider) => provider.enabled).length;
-  const enabledModels = models.filter((model) => model.enabled).length;
-
   if (loading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="text-sm text-muted-foreground">Loading LLM resources...</div>
+        <div className="text-sm text-muted-foreground">Loading provider…</div>
+      </div>
+    );
+  }
+
+  if (!provider) {
+    return (
+      <div className="space-y-6">
+        <Link
+          to="/llm"
+          className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to LLM resources
+        </Link>
+
+        <Card className="border-destructive/40">
+          <CardHeader>
+            <CardTitle className="text-destructive">Unable to load provider</CardTitle>
+            <CardDescription>{error || "Provider not found"}</CardDescription>
+          </CardHeader>
+        </Card>
       </div>
     );
   }
@@ -386,11 +322,22 @@ function LlmResourcesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">LLM Providers and Models</h1>
-          <p className="text-sm text-muted-foreground">
-            Configure upstream LLM vendors, auth, and model catalogs for router plugins.
-          </p>
+        <div className="space-y-2">
+          <Link
+            to="/llm"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to LLM resources
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">
+              {provider.displayName || provider.name}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Provider connectivity, auth settings, and model catalog.
+            </p>
+          </div>
         </div>
         <div className="flex gap-2">
           <Button
@@ -402,13 +349,13 @@ function LlmResourcesPage() {
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             Refresh
           </Button>
-          <Button type="button" variant="outline" onClick={() => openCreateModelDialog()}>
+          <Button type="button" variant="outline" onClick={openCreateModelDialog}>
             <Plus className="h-4 w-4" />
             Add Model
           </Button>
-          <Button type="button" onClick={openCreateProviderDialog}>
-            <Plus className="h-4 w-4" />
-            Add Provider
+          <Button type="button" onClick={openEditProviderDialog}>
+            <Pencil className="h-4 w-4" />
+            Edit Provider
           </Button>
         </div>
       </div>
@@ -416,272 +363,144 @@ function LlmResourcesPage() {
       {error ? (
         <Card className="border-destructive/40">
           <CardHeader>
-            <CardTitle className="text-destructive">Unable to load LLM resources</CardTitle>
+            <CardTitle className="text-destructive">Unable to refresh provider</CardTitle>
             <CardDescription>{error}</CardDescription>
           </CardHeader>
         </Card>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          icon={Bot}
-          label="Providers"
-          value={providers.length}
-          description="Registered upstream vendors"
-        />
-        <MetricCard
-          icon={Bot}
-          label="Enabled providers"
-          value={enabledProviders}
-          description="Ready for traffic"
-        />
-        <MetricCard
-          icon={Database}
-          label="Models"
-          value={models.length}
-          description="Available routing targets"
-        />
-        <MetricCard
-          icon={Database}
-          label="Enabled models"
-          value={enabledModels}
-          description="Selectable in router plugins"
-        />
+      <DetailSection title="Overview" description="Provider identity and transport settings.">
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <DetailField label="Name" value={provider.name} />
+          <DetailField label="Display name" value={provider.displayName || "—"} />
+          <DetailField label="Vendor" value={provider.vendor} />
+          <DetailField label="Protocol" value={provider.protocol} />
+          <DetailField label="Base URL" value={provider.baseUrl} mono />
+          <DetailField label="Clients" value={joinCommaSeparated(provider.clients) || "Any"} />
+          <DetailField label="Auth type" value={provider.auth.type} />
+          <DetailField label="Status" value={provider.enabled ? "Enabled" : "Disabled"} />
+          <DetailField
+            label="Created"
+            value={formatTimestamp(provider.createdAt, settings.showRelativeTimes)}
+          />
+          <DetailField
+            label="Updated"
+            value={formatTimestamp(provider.updatedAt, settings.showRelativeTimes)}
+          />
+          <div className="space-y-1 md:col-span-2 xl:col-span-1">
+            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Tags
+            </div>
+            <TagList tags={provider.tags} />
+          </div>
+        </div>
+      </DetailSection>
+
+      <div className="grid gap-6 xl:grid-cols-3">
+        <DetailSection title="Headers" description="Headers added to upstream requests.">
+          <JsonPreview value={provider.headers} emptyLabel="No custom headers configured." />
+        </DetailSection>
+        <DetailSection title="Auth Config" description="Stored provider auth configuration.">
+          <JsonPreview value={provider.auth} />
+        </DetailSection>
+        <DetailSection title="Adapter Config" description="Provider-specific adapter options.">
+          <JsonPreview value={provider.adapterConfig} emptyLabel="No adapter config provided." />
+        </DetailSection>
       </div>
 
-      <Card>
-        <CardHeader className="gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <CardTitle>Providers</CardTitle>
-            <CardDescription>
-              {filteredProviders.length} of {providers.length} providers shown
-            </CardDescription>
+      <DetailSection
+        title="Models"
+        description="Models registered under this provider."
+        actions={
+          <Button type="button" onClick={openCreateModelDialog}>
+            <Plus className="h-4 w-4" />
+            Add Model
+          </Button>
+        }
+      >
+        {models.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border px-6 py-12 text-center">
+            <p className="text-sm font-medium text-foreground">No models registered</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Add a model to make this provider available to router plugins.
+            </p>
           </div>
-          <div className="relative w-full max-w-sm">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={providerSearchQuery}
-              onChange={(event) => setProviderSearchQuery(event.target.value)}
-              placeholder="Search by name, vendor, protocol, client, or tag"
-              className="pl-9"
-            />
-          </div>
-        </CardHeader>
-        <CardContent>
-          {filteredProviders.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border px-6 py-12 text-center">
-              <p className="text-sm font-medium text-foreground">No providers matched</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Adjust the search query or create a new provider.
-              </p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Provider</TableHead>
-                  <TableHead>Connectivity</TableHead>
-                  <TableHead>Clients</TableHead>
-                  <TableHead>Models</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Updated</TableHead>
-                  <TableHead className="w-[220px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredProviders.map((provider) => (
-                  <TableRow key={provider.id}>
-                    <TableCell>
-                      <Link
-                        to="/llm/providers/$providerId"
-                        params={{ providerId: provider.id }}
-                        className="font-medium text-foreground underline-offset-4 hover:underline"
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Model</TableHead>
+                <TableHead>Metadata</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Updated</TableHead>
+                <TableHead className="w-[120px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {models.map((model) => (
+                <TableRow key={model.id}>
+                  <TableCell>
+                    <Link
+                      to="/llm/models/$modelId"
+                      params={{ modelId: model.id }}
+                      className="font-medium text-foreground underline-offset-4 hover:underline"
+                    >
+                      {model.name}
+                    </Link>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      Upstream: {model.upstreamModel}
+                    </div>
+                    {model.tags.length > 0 ? (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {model.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                  </TableCell>
+                  <TableCell className="font-mono text-sm text-muted-foreground">
+                    {previewJson(model.metadata, 120)}
+                  </TableCell>
+                  <TableCell>{model.enabled ? "Enabled" : "Disabled"}</TableCell>
+                  <TableCell>
+                    {formatTimestamp(model.updatedAt, settings.showRelativeTimes)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEditModelDialog(model)}
                       >
-                        {provider.displayName || provider.name}
-                      </Link>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        {provider.name} · {provider.vendor}
-                      </div>
-                      {provider.tags.length > 0 ? (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {provider.tags.map((tag) => (
-                            <span
-                              key={tag}
-                              className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      <div>Protocol: {provider.protocol}</div>
-                      <div className="truncate">{provider.baseUrl}</div>
-                      <div>Auth: {provider.auth.type}</div>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {provider.clients?.length ? joinCommaSeparated(provider.clients) : "Any"}
-                    </TableCell>
-                    <TableCell>{modelCountByProviderId.get(provider.id) || 0}</TableCell>
-                    <TableCell>{provider.enabled ? "Enabled" : "Disabled"}</TableCell>
-                    <TableCell>
-                      {formatTimestamp(provider.updatedAt, settings.showRelativeTimes)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap justify-end gap-1">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openCreateModelDialog(provider.id)}
-                        >
-                          <Plus className="h-4 w-4" />
-                          Add Model
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEditProviderDialog(provider)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => void handleDeleteProvider(provider)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <CardTitle>Models</CardTitle>
-            <CardDescription>
-              {filteredModels.length} of {models.length} models shown
-            </CardDescription>
-          </div>
-          <div className="relative w-full max-w-sm">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={modelSearchQuery}
-              onChange={(event) => setModelSearchQuery(event.target.value)}
-              placeholder="Search by model, upstream model, provider, or tag"
-              className="pl-9"
-            />
-          </div>
-        </CardHeader>
-        <CardContent>
-          {filteredModels.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border px-6 py-12 text-center">
-              <p className="text-sm font-medium text-foreground">No models matched</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Adjust the search query or create a new model.
-              </p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Model</TableHead>
-                  <TableHead>Provider</TableHead>
-                  <TableHead>Metadata</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Updated</TableHead>
-                  <TableHead className="w-[140px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredModels.map((model) => (
-                  <TableRow key={model.id}>
-                    <TableCell>
-                      <Link
-                        to="/llm/models/$modelId"
-                        params={{ modelId: model.id }}
-                        className="font-medium text-foreground underline-offset-4 hover:underline"
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => void handleDeleteModel(model)}
                       >
-                        {model.name}
-                      </Link>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        Upstream: {model.upstreamModel}
-                      </div>
-                      {model.tags.length > 0 ? (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {model.tags.map((tag) => (
-                            <span
-                              key={tag}
-                              className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {providerNameById.get(model.providerId) ? (
-                        <Link
-                          to="/llm/providers/$providerId"
-                          params={{ providerId: model.providerId }}
-                          className="underline-offset-4 hover:text-foreground hover:underline"
-                        >
-                          {providerNameById.get(model.providerId)}
-                        </Link>
-                      ) : (
-                        model.providerId
-                      )}
-                    </TableCell>
-                    <TableCell className="font-mono text-sm text-muted-foreground">
-                      {previewJson(model.metadata, 120)}
-                    </TableCell>
-                    <TableCell>{model.enabled ? "Enabled" : "Disabled"}</TableCell>
-                    <TableCell>
-                      {formatTimestamp(model.updatedAt, settings.showRelativeTimes)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEditModelDialog(model)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => void handleDeleteModel(model)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </DetailSection>
 
       <Dialog open={providerDialogOpen} onOpenChange={setProviderDialogOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>{editingProvider ? "Edit provider" : "Create provider"}</DialogTitle>
+            <DialogTitle>Edit provider</DialogTitle>
           </DialogHeader>
           <form className="space-y-4" onSubmit={handleProviderSubmit}>
             <div className="grid gap-4 md:grid-cols-2">
@@ -844,7 +663,7 @@ function LlmResourcesPage() {
                 Cancel
               </Button>
               <Button type="submit" disabled={savingProvider}>
-                {editingProvider ? "Save Changes" : "Create Provider"}
+                Save Changes
               </Button>
             </DialogFooter>
           </form>
@@ -857,24 +676,11 @@ function LlmResourcesPage() {
             <DialogTitle>{editingModel ? "Edit model" : "Create model"}</DialogTitle>
           </DialogHeader>
           <form className="space-y-4" onSubmit={handleModelSubmit}>
-            <div className="space-y-2">
-              <Label htmlFor="model-provider">Provider</Label>
-              <Select
-                id="model-provider"
-                value={modelFormState.providerId}
-                onChange={(event) =>
-                  setModelFormState((current) => ({ ...current, providerId: event.target.value }))
-                }
-              >
-                <option value="" disabled>
-                  Select provider
-                </option>
-                {providers.map((provider) => (
-                  <option key={provider.id} value={provider.id}>
-                    {provider.displayName || provider.name}
-                  </option>
-                ))}
-              </Select>
+            <div className="rounded-lg border border-border bg-muted/30 px-4 py-3">
+              <p className="text-sm font-medium text-foreground">Provider</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {provider.displayName || provider.name}
+              </p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
@@ -950,7 +756,7 @@ function LlmResourcesPage() {
               <Button type="button" variant="outline" onClick={() => setModelDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={savingModel || !modelFormState.providerId}>
+              <Button type="submit" disabled={savingModel}>
                 {editingModel ? "Save Changes" : "Create Model"}
               </Button>
             </DialogFooter>
@@ -958,28 +764,6 @@ function LlmResourcesPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-function MetricCard(props: {
-  icon: typeof Bot;
-  label: string;
-  value: number;
-  description: string;
-}) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <div>
-          <CardTitle className="text-sm">{props.label}</CardTitle>
-          <CardDescription>{props.description}</CardDescription>
-        </div>
-        <props.icon className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-semibold">{props.value}</div>
-      </CardContent>
-    </Card>
   );
 }
 

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -356,7 +356,13 @@ function PluginsPage() {
                 {filteredPlugins.map((plugin) => (
                   <TableRow key={plugin.id}>
                     <TableCell>
-                      <div className="font-medium">{plugin.name}</div>
+                      <Link
+                        to="/plugins/$pluginId"
+                        params={{ pluginId: plugin.id }}
+                        className="font-medium text-foreground underline-offset-4 hover:underline"
+                      >
+                        {plugin.name}
+                      </Link>
                       {plugin.tags?.length ? (
                         <div className="mt-2 flex flex-wrap gap-1">
                           {plugin.tags.map((tag) => (

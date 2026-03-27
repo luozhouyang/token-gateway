@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   ScopedPluginDialog,
@@ -430,7 +430,15 @@ function ConsumersPage() {
               <Card key={consumer.id}>
                 <CardHeader className="gap-4 md:flex-row md:items-start md:justify-between">
                   <div>
-                    <CardTitle>{displayName}</CardTitle>
+                    <CardTitle>
+                      <Link
+                        to="/consumers/$consumerId"
+                        params={{ consumerId: consumer.id }}
+                        className="underline-offset-4 hover:underline"
+                      >
+                        {displayName}
+                      </Link>
+                    </CardTitle>
                     <CardDescription>
                       {consumer.customId ? `Custom ID: ${consumer.customId}` : "No custom ID"} ·{" "}
                       {credentials.length} credential(s)

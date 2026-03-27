@@ -19,6 +19,12 @@ import { Route as PluginsIndexRouteImport } from "./routes/plugins/index";
 import { Route as LlmIndexRouteImport } from "./routes/llm/index";
 import { Route as DashboardIndexRouteImport } from "./routes/dashboard/index";
 import { Route as ConsumersIndexRouteImport } from "./routes/consumers/index";
+import { Route as ServicesServiceIdRouteImport } from "./routes/services/$serviceId";
+import { Route as RoutesRouteIdRouteImport } from "./routes/routes/$routeId";
+import { Route as PluginsPluginIdRouteImport } from "./routes/plugins/$pluginId";
+import { Route as ConsumersConsumerIdRouteImport } from "./routes/consumers/$consumerId";
+import { Route as LlmProvidersProviderIdRouteImport } from "./routes/llm/providers/$providerId";
+import { Route as LlmModelsModelIdRouteImport } from "./routes/llm/models/$modelId";
 
 const AboutRoute = AboutRouteImport.update({
   id: "/about",
@@ -70,10 +76,44 @@ const ConsumersIndexRoute = ConsumersIndexRouteImport.update({
   path: "/consumers/",
   getParentRoute: () => rootRouteImport,
 } as any);
+const ServicesServiceIdRoute = ServicesServiceIdRouteImport.update({
+  id: "/services/$serviceId",
+  path: "/services/$serviceId",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const RoutesRouteIdRoute = RoutesRouteIdRouteImport.update({
+  id: "/routes/$routeId",
+  path: "/routes/$routeId",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const PluginsPluginIdRoute = PluginsPluginIdRouteImport.update({
+  id: "/plugins/$pluginId",
+  path: "/plugins/$pluginId",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const ConsumersConsumerIdRoute = ConsumersConsumerIdRouteImport.update({
+  id: "/consumers/$consumerId",
+  path: "/consumers/$consumerId",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const LlmProvidersProviderIdRoute = LlmProvidersProviderIdRouteImport.update({
+  id: "/llm/providers/$providerId",
+  path: "/llm/providers/$providerId",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const LlmModelsModelIdRoute = LlmModelsModelIdRouteImport.update({
+  id: "/llm/models/$modelId",
+  path: "/llm/models/$modelId",
+  getParentRoute: () => rootRouteImport,
+} as any);
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/about": typeof AboutRoute;
+  "/consumers/$consumerId": typeof ConsumersConsumerIdRoute;
+  "/plugins/$pluginId": typeof PluginsPluginIdRoute;
+  "/routes/$routeId": typeof RoutesRouteIdRoute;
+  "/services/$serviceId": typeof ServicesServiceIdRoute;
   "/consumers/": typeof ConsumersIndexRoute;
   "/dashboard/": typeof DashboardIndexRoute;
   "/llm/": typeof LlmIndexRoute;
@@ -82,10 +122,16 @@ export interface FileRoutesByFullPath {
   "/services/": typeof ServicesIndexRoute;
   "/settings/": typeof SettingsIndexRoute;
   "/upstreams/": typeof UpstreamsIndexRoute;
+  "/llm/models/$modelId": typeof LlmModelsModelIdRoute;
+  "/llm/providers/$providerId": typeof LlmProvidersProviderIdRoute;
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
   "/about": typeof AboutRoute;
+  "/consumers/$consumerId": typeof ConsumersConsumerIdRoute;
+  "/plugins/$pluginId": typeof PluginsPluginIdRoute;
+  "/routes/$routeId": typeof RoutesRouteIdRoute;
+  "/services/$serviceId": typeof ServicesServiceIdRoute;
   "/consumers": typeof ConsumersIndexRoute;
   "/dashboard": typeof DashboardIndexRoute;
   "/llm": typeof LlmIndexRoute;
@@ -94,11 +140,17 @@ export interface FileRoutesByTo {
   "/services": typeof ServicesIndexRoute;
   "/settings": typeof SettingsIndexRoute;
   "/upstreams": typeof UpstreamsIndexRoute;
+  "/llm/models/$modelId": typeof LlmModelsModelIdRoute;
+  "/llm/providers/$providerId": typeof LlmProvidersProviderIdRoute;
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   "/": typeof IndexRoute;
   "/about": typeof AboutRoute;
+  "/consumers/$consumerId": typeof ConsumersConsumerIdRoute;
+  "/plugins/$pluginId": typeof PluginsPluginIdRoute;
+  "/routes/$routeId": typeof RoutesRouteIdRoute;
+  "/services/$serviceId": typeof ServicesServiceIdRoute;
   "/consumers/": typeof ConsumersIndexRoute;
   "/dashboard/": typeof DashboardIndexRoute;
   "/llm/": typeof LlmIndexRoute;
@@ -107,12 +159,18 @@ export interface FileRoutesById {
   "/services/": typeof ServicesIndexRoute;
   "/settings/": typeof SettingsIndexRoute;
   "/upstreams/": typeof UpstreamsIndexRoute;
+  "/llm/models/$modelId": typeof LlmModelsModelIdRoute;
+  "/llm/providers/$providerId": typeof LlmProvidersProviderIdRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
   fullPaths:
     | "/"
     | "/about"
+    | "/consumers/$consumerId"
+    | "/plugins/$pluginId"
+    | "/routes/$routeId"
+    | "/services/$serviceId"
     | "/consumers/"
     | "/dashboard/"
     | "/llm/"
@@ -120,11 +178,17 @@ export interface FileRouteTypes {
     | "/routes/"
     | "/services/"
     | "/settings/"
-    | "/upstreams/";
+    | "/upstreams/"
+    | "/llm/models/$modelId"
+    | "/llm/providers/$providerId";
   fileRoutesByTo: FileRoutesByTo;
   to:
     | "/"
     | "/about"
+    | "/consumers/$consumerId"
+    | "/plugins/$pluginId"
+    | "/routes/$routeId"
+    | "/services/$serviceId"
     | "/consumers"
     | "/dashboard"
     | "/llm"
@@ -132,11 +196,17 @@ export interface FileRouteTypes {
     | "/routes"
     | "/services"
     | "/settings"
-    | "/upstreams";
+    | "/upstreams"
+    | "/llm/models/$modelId"
+    | "/llm/providers/$providerId";
   id:
     | "__root__"
     | "/"
     | "/about"
+    | "/consumers/$consumerId"
+    | "/plugins/$pluginId"
+    | "/routes/$routeId"
+    | "/services/$serviceId"
     | "/consumers/"
     | "/dashboard/"
     | "/llm/"
@@ -144,12 +214,18 @@ export interface FileRouteTypes {
     | "/routes/"
     | "/services/"
     | "/settings/"
-    | "/upstreams/";
+    | "/upstreams/"
+    | "/llm/models/$modelId"
+    | "/llm/providers/$providerId";
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   AboutRoute: typeof AboutRoute;
+  ConsumersConsumerIdRoute: typeof ConsumersConsumerIdRoute;
+  PluginsPluginIdRoute: typeof PluginsPluginIdRoute;
+  RoutesRouteIdRoute: typeof RoutesRouteIdRoute;
+  ServicesServiceIdRoute: typeof ServicesServiceIdRoute;
   ConsumersIndexRoute: typeof ConsumersIndexRoute;
   DashboardIndexRoute: typeof DashboardIndexRoute;
   LlmIndexRoute: typeof LlmIndexRoute;
@@ -158,6 +234,8 @@ export interface RootRouteChildren {
   ServicesIndexRoute: typeof ServicesIndexRoute;
   SettingsIndexRoute: typeof SettingsIndexRoute;
   UpstreamsIndexRoute: typeof UpstreamsIndexRoute;
+  LlmModelsModelIdRoute: typeof LlmModelsModelIdRoute;
+  LlmProvidersProviderIdRoute: typeof LlmProvidersProviderIdRoute;
 }
 
 declare module "@tanstack/react-router" {
@@ -232,12 +310,58 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof ConsumersIndexRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/services/$serviceId": {
+      id: "/services/$serviceId";
+      path: "/services/$serviceId";
+      fullPath: "/services/$serviceId";
+      preLoaderRoute: typeof ServicesServiceIdRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/routes/$routeId": {
+      id: "/routes/$routeId";
+      path: "/routes/$routeId";
+      fullPath: "/routes/$routeId";
+      preLoaderRoute: typeof RoutesRouteIdRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/plugins/$pluginId": {
+      id: "/plugins/$pluginId";
+      path: "/plugins/$pluginId";
+      fullPath: "/plugins/$pluginId";
+      preLoaderRoute: typeof PluginsPluginIdRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/consumers/$consumerId": {
+      id: "/consumers/$consumerId";
+      path: "/consumers/$consumerId";
+      fullPath: "/consumers/$consumerId";
+      preLoaderRoute: typeof ConsumersConsumerIdRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/llm/providers/$providerId": {
+      id: "/llm/providers/$providerId";
+      path: "/llm/providers/$providerId";
+      fullPath: "/llm/providers/$providerId";
+      preLoaderRoute: typeof LlmProvidersProviderIdRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/llm/models/$modelId": {
+      id: "/llm/models/$modelId";
+      path: "/llm/models/$modelId";
+      fullPath: "/llm/models/$modelId";
+      preLoaderRoute: typeof LlmModelsModelIdRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  ConsumersConsumerIdRoute: ConsumersConsumerIdRoute,
+  PluginsPluginIdRoute: PluginsPluginIdRoute,
+  RoutesRouteIdRoute: RoutesRouteIdRoute,
+  ServicesServiceIdRoute: ServicesServiceIdRoute,
   ConsumersIndexRoute: ConsumersIndexRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   LlmIndexRoute: LlmIndexRoute,
@@ -246,6 +370,8 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesIndexRoute: ServicesIndexRoute,
   SettingsIndexRoute: SettingsIndexRoute,
   UpstreamsIndexRoute: UpstreamsIndexRoute,
+  LlmModelsModelIdRoute: LlmModelsModelIdRoute,
+  LlmProvidersProviderIdRoute: LlmProvidersProviderIdRoute,
 };
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

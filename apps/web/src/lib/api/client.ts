@@ -170,6 +170,26 @@ export interface PaginationParams {
   offset?: number;
 }
 
+export interface ServiceListParams extends PaginationParams {
+  name?: string;
+  protocol?: string;
+}
+
+export interface RouteListParams extends PaginationParams {
+  name?: string;
+  serviceId?: string;
+  method?: string;
+  path?: string;
+}
+
+export interface PluginListParams extends PaginationParams {
+  name?: string;
+  serviceId?: string;
+  routeId?: string;
+  consumerId?: string;
+  enabled?: boolean;
+}
+
 export interface LlmProviderListParams extends PaginationParams {
   name?: string;
   vendor?: LlmProviderVendor;
@@ -277,9 +297,16 @@ async function fetchAllListItems<T>(endpoint: string): Promise<T[]> {
 
 // Services API
 export const servicesApi = {
-  list: async (params?: PaginationParams): Promise<Service[]> => {
-    if (params?.limit !== undefined || params?.offset !== undefined) {
-      const response = await fetchListPage<Service>("/services", params);
+  list: async (params?: ServiceListParams): Promise<Service[]> => {
+    if (params && Object.keys(params).length > 0) {
+      const response = await fetchApi<ApiListResponse<Service>>(
+        `/services${buildQueryString({
+          limit: params.limit,
+          offset: params.offset,
+          name: params.name,
+          protocol: params.protocol,
+        })}`,
+      );
       return response.data;
     }
 
@@ -316,9 +343,18 @@ export const servicesApi = {
 
 // Routes API
 export const routesApi = {
-  list: async (params?: PaginationParams): Promise<Route[]> => {
-    if (params?.limit !== undefined || params?.offset !== undefined) {
-      const response = await fetchListPage<Route>("/routes", params);
+  list: async (params?: RouteListParams): Promise<Route[]> => {
+    if (params && Object.keys(params).length > 0) {
+      const response = await fetchApi<ApiListResponse<Route>>(
+        `/routes${buildQueryString({
+          limit: params.limit,
+          offset: params.offset,
+          name: params.name,
+          serviceId: params.serviceId,
+          method: params.method,
+          path: params.path,
+        })}`,
+      );
       return response.data;
     }
 
@@ -526,9 +562,19 @@ export const credentialsApi = {
 
 // Plugins API
 export const pluginsApi = {
-  list: async (params?: PaginationParams): Promise<Plugin[]> => {
-    if (params?.limit !== undefined || params?.offset !== undefined) {
-      const response = await fetchListPage<Plugin>("/plugins", params);
+  list: async (params?: PluginListParams): Promise<Plugin[]> => {
+    if (params && Object.keys(params).length > 0) {
+      const response = await fetchApi<ApiListResponse<Plugin>>(
+        `/plugins${buildQueryString({
+          limit: params.limit,
+          offset: params.offset,
+          name: params.name,
+          serviceId: params.serviceId,
+          routeId: params.routeId,
+          consumerId: params.consumerId,
+          enabled: params.enabled,
+        })}`,
+      );
       return response.data;
     }
 

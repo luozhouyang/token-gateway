@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   ScopedPluginDialog,
@@ -327,7 +327,13 @@ function ServicesPage() {
                 {filteredServices.map((service) => (
                   <TableRow key={service.id}>
                     <TableCell>
-                      <div className="font-medium">{service.name}</div>
+                      <Link
+                        to="/services/$serviceId"
+                        params={{ serviceId: service.id }}
+                        className="font-medium text-foreground underline-offset-4 hover:underline"
+                      >
+                        {service.name}
+                      </Link>
                       <div className="mt-1 text-xs text-muted-foreground">
                         Protocol: {service.protocol || "http"}
                       </div>

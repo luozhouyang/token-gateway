@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   ScopedPluginDialog,
@@ -351,7 +351,13 @@ function RoutesPage() {
                 {filteredRoutes.map((route) => (
                   <TableRow key={route.id}>
                     <TableCell>
-                      <div className="font-medium">{route.name}</div>
+                      <Link
+                        to="/routes/$routeId"
+                        params={{ routeId: route.id }}
+                        className="font-medium text-foreground underline-offset-4 hover:underline"
+                      >
+                        {route.name}
+                      </Link>
                       <div className="mt-1 text-xs text-muted-foreground">
                         Protocols: {formatList(route.protocols)}
                       </div>
@@ -369,9 +375,17 @@ function RoutesPage() {
                       ) : null}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {route.serviceId
-                        ? serviceNameById.get(route.serviceId) || route.serviceId
-                        : "Unbound"}
+                      {route.serviceId ? (
+                        <Link
+                          to="/services/$serviceId"
+                          params={{ serviceId: route.serviceId }}
+                          className="underline-offset-4 hover:text-foreground hover:underline"
+                        >
+                          {serviceNameById.get(route.serviceId) || route.serviceId}
+                        </Link>
+                      ) : (
+                        "Unbound"
+                      )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       <div>Paths: {formatList(route.paths)}</div>
