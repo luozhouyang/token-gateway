@@ -118,6 +118,23 @@ export class PluginLoader {
     if (p.onResponse && typeof p.onResponse !== "function") return false;
     if (p.onLog && typeof p.onLog !== "function") return false;
 
+    if (p.migrations !== undefined) {
+      if (!Array.isArray(p.migrations)) {
+        return false;
+      }
+
+      for (const migration of p.migrations) {
+        if (!migration || typeof migration !== "object") {
+          return false;
+        }
+
+        const m = migration as Record<string, unknown>;
+        if (typeof m.id !== "string") return false;
+        if (typeof m.sql !== "string") return false;
+        if (m.checksum !== undefined && typeof m.checksum !== "string") return false;
+      }
+    }
+
     return true;
   }
 

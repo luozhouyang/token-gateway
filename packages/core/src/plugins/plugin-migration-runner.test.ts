@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
 import { join } from "node:path";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -44,9 +46,7 @@ describe("plugin migration infrastructure", () => {
       name: "rate-limit",
       version: RateLimitVersion,
     });
-    expect(migration).toMatchObject({
-      migration_id: "0001_init",
-    });
+    expect(migration).toBeUndefined();
   });
 
   test("applies custom plugin migrations passed to runMigrations", async () => {
@@ -57,7 +57,7 @@ describe("plugin migration infrastructure", () => {
       migrations: [
         {
           id: "0001_init",
-          up: `
+          sql: `
             CREATE TABLE IF NOT EXISTS plugin_custom_db_plugin_entries (
               id text PRIMARY KEY NOT NULL,
               value text NOT NULL
@@ -92,6 +92,52 @@ describe("plugin migration infrastructure", () => {
       migration_id: "0001_init",
     });
   });
+
+  test("reconciles a drifted drizzle migration journal before applying migrations", async () => {
+    await runMigrations(dbPath);
+    db = new DatabaseService(dbPath);
+
+    const rawDb = db.getRawDatabase();
+    await rawDb.execute(`DELETE FROM __drizzle_migrations`);
+    await rawDb.execute({
+      sql: `INSERT INTO __drizzle_migrations ("hash", "created_at") VALUES (?, ?)`,
+      args: ["manual-0000", CoreMigrationMillis.initialSchema],
+    });
+    await rawDb.execute({
+      sql: `INSERT INTO __drizzle_migrations ("hash", "created_at") VALUES (?, ?)`,
+      args: ["manual-0001", CoreMigrationMillis.removePluginOrdering],
+    });
+
+    db.close();
+    db = null;
+
+    await runMigrations(dbPath);
+    db = new DatabaseService(dbPath);
+
+    const reconciledRows = (
+      await db
+        .getRawDatabase()
+        .execute(`SELECT created_at FROM __drizzle_migrations ORDER BY created_at ASC`)
+    ).rows as unknown as Array<{
+      created_at: bigint | number | string;
+    }>;
+    const reconciledMillis = reconciledRows.map((row) => Number(row.created_at));
+
+    expect(reconciledMillis).toEqual([
+      CoreMigrationMillis.initialSchema,
+      CoreMigrationMillis.removePluginOrdering,
+      CoreMigrationMillis.pluginRuntimeExtensions,
+      CoreMigrationMillis.llmResources,
+      CoreMigrationMillis.pluginBuiltinRuntimeTables,
+    ]);
+  });
 });
 
 const RateLimitVersion = "3.0.0";
+const CoreMigrationMillis = {
+  initialSchema: 1773721556491,
+  removePluginOrdering: 1774320000000,
+  pluginRuntimeExtensions: 1774320000001,
+  llmResources: 1774320000002,
+  pluginBuiltinRuntimeTables: 1774532028380,
+} as const;

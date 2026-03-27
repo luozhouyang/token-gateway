@@ -29,6 +29,13 @@
       "when": 1774320000002,
       "tag": "0003_llm_resources",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1774532028380,
+      "tag": "0004_plugin_builtin_runtime_tables",
+      "breakpoints": true
     }
   ]
 }

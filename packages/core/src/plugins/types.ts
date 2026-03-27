@@ -79,8 +79,8 @@ export interface PluginStorageContext {
 
 export interface PluginMigration {
   id: string;
+  sql: string;
   checksum?: string;
-  up: string | ((ctx: PluginStorageContext) => Promise<void> | void);
 }
 
 export interface PluginConfigNormalizationContext {
@@ -100,7 +100,7 @@ export interface PluginDefinition {
     config: Record<string, unknown>,
     ctx: PluginConfigNormalizationContext,
   ) => Promise<Record<string, unknown>> | Record<string, unknown>;
-  migrations?: PluginMigration[];
+  migrations?: readonly PluginMigration[];
   createStorage?: (ctx: PluginStorageContext) => unknown;
   onAccess?: PluginHandler;
   onResponse?: PluginHandler;

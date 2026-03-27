@@ -76,45 +76,6 @@ export const LlmRouterPlugin: PluginDefinition = {
   priority: 700,
   phases: ["access"],
   configSchema: LlmRouterConfigSchema,
-  migrations: [
-    {
-      id: "0001_init",
-      up: `
-        CREATE TABLE IF NOT EXISTS plugin_llm_router_circuits (
-          plugin_id text NOT NULL,
-          provider_name text NOT NULL,
-          state text NOT NULL,
-          consecutive_failures integer NOT NULL,
-          consecutive_successes integer NOT NULL,
-          request_count integer NOT NULL,
-          failure_count integer NOT NULL,
-          opened_at integer,
-          created_at text NOT NULL,
-          updated_at text NOT NULL,
-          PRIMARY KEY(plugin_id, provider_name)
-        );
-        CREATE INDEX IF NOT EXISTS idx_plugin_llm_router_circuits_state
-          ON plugin_llm_router_circuits (state, updated_at);
-
-        CREATE TABLE IF NOT EXISTS plugin_llm_router_request_logs (
-          id integer PRIMARY KEY AUTOINCREMENT,
-          plugin_id text NOT NULL,
-          request_id text NOT NULL,
-          client_type text NOT NULL,
-          provider_name text NOT NULL,
-          model text,
-          status_code integer,
-          latency_ms integer NOT NULL,
-          failure_reason text,
-          created_at text NOT NULL
-        );
-        CREATE INDEX IF NOT EXISTS idx_plugin_llm_router_request_logs_request_id
-          ON plugin_llm_router_request_logs (request_id, created_at);
-        CREATE INDEX IF NOT EXISTS idx_plugin_llm_router_request_logs_provider
-          ON plugin_llm_router_request_logs (provider_name, created_at);
-      `,
-    },
-  ],
   createStorage: (ctx) => createLlmRouterStorage(ctx.rawDb),
 
   onAccess: async (ctx: PluginContext): Promise<PluginHandlerResult> => {

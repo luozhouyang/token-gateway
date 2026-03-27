@@ -35,23 +35,6 @@ export const RateLimitPlugin: PluginDefinition = {
   priority: 910,
   phases: ["access", "response"],
   configSchema: rateLimitConfigSchema,
-  migrations: [
-    {
-      id: "0001_init",
-      up: `
-        CREATE TABLE IF NOT EXISTS plugin_rate_limit_counters (
-          plugin_id text NOT NULL,
-          identifier text NOT NULL,
-          count integer NOT NULL,
-          window_started_at integer NOT NULL,
-          expires_at integer NOT NULL,
-          PRIMARY KEY(plugin_id, identifier)
-        );
-        CREATE INDEX IF NOT EXISTS idx_plugin_rate_limit_counters_expires_at
-          ON plugin_rate_limit_counters (expires_at);
-      `,
-    },
-  ],
   createStorage: (ctx) => createRateLimitStorage(ctx.rawDb),
 
   onAccess: async (ctx: PluginContext): Promise<PluginHandlerResult | void> => {
