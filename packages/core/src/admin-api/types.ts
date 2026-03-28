@@ -5,6 +5,7 @@ import type {
   LlmProviderAuthConfig,
   LlmProviderResourceConfig,
 } from "../plugins/llm/config.js";
+import type { ConfigObjectDescriptor } from "../plugins/config-descriptor.js";
 import type {
   LlmClientProfile,
   LlmProviderProtocol,
@@ -142,6 +143,16 @@ export interface PluginResponse {
   tags: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface PluginDefinitionResponse {
+  name: string;
+  displayName: string;
+  description: string | null;
+  version: string;
+  phases: string[];
+  hasConfigSchema: boolean;
+  configDescriptor: ConfigObjectDescriptor | null;
 }
 
 export interface CredentialResponse {

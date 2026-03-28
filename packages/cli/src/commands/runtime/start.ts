@@ -70,7 +70,7 @@ async function startEngine(configPath: string): Promise<void> {
         : join(join(configPath, ".."), dbPath);
 
     console.log("Running database migrations...");
-    runMigrations(absoluteDbPath);
+    await runMigrations(absoluteDbPath);
 
     console.log("Initializing database connection...");
     database = new DatabaseService(absoluteDbPath);

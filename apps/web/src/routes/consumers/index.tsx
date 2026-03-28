@@ -1,5 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { ConfigFormRenderer, StructuredObjectField } from "@/components/configs/ConfigFormRenderer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import {
   ScopedPluginDialog,
@@ -17,7 +18,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { keyAuthCredentialDescriptor } from "@/lib/configs/descriptors";
+import {
+  normalizeKeyAuthCredentialInput,
+  normalizeStructuredObjectInputOrEmpty,
+} from "@/lib/configs/resource-config";
 import {
   Table,
   TableBody,
@@ -34,9 +39,7 @@ import {
   getErrorMessage,
   joinCommaSeparated,
   parseCommaSeparatedInput,
-  parseJsonInput,
   previewJson,
-  stringifyJson,
 } from "@/lib/dashboard-utils";
 import { toast } from "sonner";
 import {
@@ -63,7 +66,7 @@ interface ConsumerFormState {
 
 interface CredentialFormState {
   credentialType: string;
-  credential: string;
+  credential: Record<string, unknown>;
   tags: string;
 }
 
@@ -75,7 +78,7 @@ const EMPTY_CONSUMER_FORM: ConsumerFormState = {
 
 const EMPTY_CREDENTIAL_FORM: CredentialFormState = {
   credentialType: "key-auth",
-  credential: JSON.stringify({ key: "" }, null, 2),
+  credential: { key: "" },
   tags: "",
 };
 
@@ -185,7 +188,7 @@ function ConsumersPage() {
     setCredentialContext({ consumerId, credential });
     setCredentialFormState({
       credentialType: credential.credentialType,
-      credential: stringifyJson(credential.credential),
+      credential: credential.credential || {},
       tags: joinCommaSeparated(credential.tags),
     });
     setCredentialDialogOpen(true);
@@ -233,10 +236,10 @@ function ConsumersPage() {
 
       const payload: Partial<Credential> = {
         credentialType: credentialFormState.credentialType.trim(),
-        credential: parseJsonInput<Record<string, unknown>>(
-          credentialFormState.credential,
-          "Credential JSON",
-        ),
+        credential:
+          credentialFormState.credentialType.trim() === "key-auth"
+            ? normalizeKeyAuthCredentialInput(credentialFormState.credential)
+            : normalizeStructuredObjectInputOrEmpty(credentialFormState.credential),
         tags: parseCommaSeparatedInput(credentialFormState.tags),
       };
 
@@ -681,6 +684,10 @@ function ConsumersPage() {
                   setCredentialFormState((current) => ({
                     ...current,
                     credentialType: event.target.value,
+                    credential:
+                      event.target.value.trim() === "key-auth"
+                        ? normalizeKeyAuthCredentialInput(current.credential)
+                        : current.credential,
                   }))
                 }
                 placeholder="key-auth"
@@ -688,21 +695,30 @@ function ConsumersPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="credential-json">Credential JSON</Label>
-              <Textarea
-                id="credential-json"
+            {credentialFormState.credentialType.trim() === "key-auth" ? (
+              <ConfigFormRenderer
+                fields={keyAuthCredentialDescriptor.fields}
                 value={credentialFormState.credential}
-                onChange={(event) =>
+                onChange={(credential) =>
                   setCredentialFormState((current) => ({
                     ...current,
-                    credential: event.target.value,
+                    credential,
                   }))
                 }
-                className="min-h-40 font-mono"
-                placeholder='{"key": "abc123"}'
               />
-            </div>
+            ) : (
+              <StructuredObjectField
+                label="Credential fields"
+                description="Configure credential properties as structured data instead of raw JSON."
+                value={credentialFormState.credential}
+                onChange={(credential) =>
+                  setCredentialFormState((current) => ({
+                    ...current,
+                    credential,
+                  }))
+                }
+              />
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="credential-tags">Tags</Label>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ConfigFormRenderer, StructuredObjectField } from "@/components/configs/ConfigFormRenderer";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,15 +10,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { pluginsApi, type Plugin } from "@/lib/api/client";
-import {
-  getErrorMessage,
-  parseCommaSeparatedInput,
-  parseJsonInput,
-  stringifyJson,
-} from "@/lib/dashboard-utils";
+import { normalizeStructuredObjectInputOrEmpty } from "@/lib/configs/resource-config";
+import { pluginsApi, type Plugin, type PluginDefinitionSummary } from "@/lib/api/client";
+import { getErrorMessage, parseCommaSeparatedInput } from "@/lib/dashboard-utils";
 import { toast } from "sonner";
 
 export type ScopedPluginTargetKind = "service" | "route" | "consumer";
@@ -30,14 +27,14 @@ export interface ScopedPluginTarget {
 
 interface PluginFormState {
   name: string;
-  config: string;
+  config: Record<string, unknown>;
   enabled: boolean;
   tags: string;
 }
 
 const EMPTY_FORM: PluginFormState = {
   name: "",
-  config: "{}",
+  config: {},
   enabled: true,
   tags: "",
 };
@@ -52,7 +49,16 @@ export interface PluginBindingDialogProps {
 
 export function PluginBindingDialog(props: PluginBindingDialogProps) {
   const [saving, setSaving] = useState(false);
+  const [pluginDefinitions, setPluginDefinitions] = useState<PluginDefinitionSummary[]>([]);
   const [formState, setFormState] = useState<PluginFormState>(EMPTY_FORM);
+
+  useEffect(() => {
+    if (!props.open) {
+      return;
+    }
+
+    void loadPluginDefinitions();
+  }, [props.open]);
 
   useEffect(() => {
     if (!props.open) {
@@ -62,7 +68,7 @@ export function PluginBindingDialog(props: PluginBindingDialogProps) {
     if (props.plugin) {
       setFormState({
         name: props.plugin.name,
-        config: stringifyJson(props.plugin.config || {}),
+        config: props.plugin.config || {},
         enabled: props.plugin.enabled ?? true,
         tags: props.plugin.tags?.join(", ") || "",
       });
@@ -71,6 +77,17 @@ export function PluginBindingDialog(props: PluginBindingDialogProps) {
 
     setFormState(EMPTY_FORM);
   }, [props.open, props.plugin, props.target]);
+
+  async function loadPluginDefinitions() {
+    try {
+      setPluginDefinitions(await pluginsApi.listDefinitions());
+    } catch (error) {
+      toast.error("Failed to load plugin definitions", {
+        description: getErrorMessage(error),
+      });
+      setPluginDefinitions([]);
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -83,7 +100,7 @@ export function PluginBindingDialog(props: PluginBindingDialogProps) {
 
       const payload: Partial<Plugin> = {
         name: formState.name.trim(),
-        config: parseJsonInput<Record<string, unknown>>(formState.config, "Plugin config"),
+        config: normalizeStructuredObjectInputOrEmpty(formState.config),
         enabled: formState.enabled,
         tags: parseCommaSeparatedInput(formState.tags),
       };
@@ -114,6 +131,35 @@ export function PluginBindingDialog(props: PluginBindingDialogProps) {
     }
   }
 
+  const selectedDefinition = pluginDefinitions.find(
+    (definition) => definition.name === formState.name.trim(),
+  );
+  const selectedPluginValue = selectedDefinition
+    ? selectedDefinition.name
+    : formState.name.trim().length > 0
+      ? "__custom__"
+      : "";
+
+  function handlePluginSelectionChange(value: string) {
+    if (value === "__custom__") {
+      setFormState((current) => ({
+        ...current,
+        name:
+          current.name && !pluginDefinitions.some((item) => item.name === current.name)
+            ? current.name
+            : "",
+        config: {},
+      }));
+      return;
+    }
+
+    setFormState((current) => ({
+      ...current,
+      name: value,
+      config: {},
+    }));
+  }
+
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
@@ -133,17 +179,49 @@ export function PluginBindingDialog(props: PluginBindingDialogProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="plugin-name">Name</Label>
-            <Input
-              id="plugin-name"
-              value={formState.name}
-              onChange={(event) =>
-                setFormState((current) => ({ ...current, name: event.target.value }))
-              }
-              placeholder="rate-limit"
-              required
-            />
+            <Label htmlFor="plugin-name-select">Plugin</Label>
+            <Select
+              id="plugin-name-select"
+              value={selectedPluginValue}
+              onChange={(event) => handlePluginSelectionChange(event.target.value)}
+            >
+              <option value="">Select plugin</option>
+              {pluginDefinitions.map((definition) => (
+                <option key={definition.name} value={definition.name}>
+                  {definition.displayName}
+                </option>
+              ))}
+              <option value="__custom__">Custom plugin</option>
+            </Select>
           </div>
+
+          {selectedPluginValue === "__custom__" ? (
+            <div className="space-y-2">
+              <Label htmlFor="plugin-name">Plugin name</Label>
+              <Input
+                id="plugin-name"
+                value={formState.name}
+                onChange={(event) =>
+                  setFormState((current) => ({ ...current, name: event.target.value }))
+                }
+                placeholder="my-company-plugin"
+                required
+              />
+            </div>
+          ) : null}
+
+          {selectedDefinition ? (
+            <div className="rounded-lg border border-border bg-muted/30 px-4 py-3">
+              <p className="text-sm font-medium text-foreground">
+                {selectedDefinition.displayName}
+              </p>
+              {selectedDefinition.description ? (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {selectedDefinition.description}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="flex items-center justify-between gap-4 rounded-lg border border-border px-4 py-3">
             <div>
@@ -160,18 +238,26 @@ export function PluginBindingDialog(props: PluginBindingDialogProps) {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="plugin-config">Config JSON</Label>
-            <Textarea
-              id="plugin-config"
+          {selectedDefinition?.configDescriptor ? (
+            <ConfigFormRenderer
+              fields={selectedDefinition.configDescriptor.fields}
               value={formState.config}
-              onChange={(event) =>
-                setFormState((current) => ({ ...current, config: event.target.value }))
-              }
-              className="min-h-40 font-mono"
-              placeholder={stringifyJson({})}
+              onChange={(config) => setFormState((current) => ({ ...current, config }))}
+              showAdvancedJson
+              advancedJsonLabel="Advanced plugin config"
             />
-          </div>
+          ) : formState.name.trim() ? (
+            <StructuredObjectField
+              label="Plugin config"
+              description="Use structured fields for plugin config. Unknown plugins fall back to a generic object editor."
+              value={formState.config}
+              onChange={(config) => setFormState((current) => ({ ...current, config }))}
+            />
+          ) : (
+            <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+              Select a plugin to configure its fields.
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="plugin-tags">Tags</Label>
@@ -189,7 +275,7 @@ export function PluginBindingDialog(props: PluginBindingDialogProps) {
             <Button type="button" variant="outline" onClick={() => props.onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={saving || !props.target}>
+            <Button type="submit" disabled={saving || !props.target || !formState.name.trim()}>
               {props.plugin ? "Save Changes" : "Add Plugin"}
             </Button>
           </DialogFooter>

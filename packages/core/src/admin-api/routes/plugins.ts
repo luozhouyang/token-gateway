@@ -14,11 +14,17 @@ import { ApiError } from "../server.js";
 import { PluginBindingRepository } from "../../entities/plugin-binding.js";
 import { DatabaseService } from "../../storage/database.js";
 import { PluginManager } from "../../plugins/plugin-manager.js";
+import type { PluginDefinition } from "../../plugins/types.js";
 
 export function createPluginsRoutes(db: DatabaseService, pluginManager?: PluginManager) {
   const routes = new Hono();
   const pluginRepo = new PluginBindingRepository(db);
   const manager = pluginManager ?? new PluginManager(db);
+
+  routes.get("/definitions", async (c) => {
+    const definitions = manager.listAvailableDefinitions().map(toPluginDefinitionResponse);
+    return c.json(successResponse(definitions));
+  });
 
   // List plugins
   routes.get("/", zodValidator("query", paginationSchema.merge(pluginFilterSchema)), async (c) => {
@@ -154,4 +160,16 @@ async function createOrThrowBadRequest<T>(operation: () => Promise<T>): Promise<
 
     throw error;
   }
+}
+
+function toPluginDefinitionResponse(definition: PluginDefinition) {
+  return {
+    name: definition.name,
+    displayName: definition.displayName ?? definition.name,
+    description: definition.description ?? null,
+    version: definition.version,
+    phases: definition.phases,
+    hasConfigSchema: definition.configSchema !== undefined,
+    configDescriptor: definition.configDescriptor ?? null,
+  };
 }

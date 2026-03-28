@@ -266,11 +266,11 @@ function Dashboard() {
               <CardTitle className="text-base">Gateway health</CardTitle>
               <CardDescription>Derived from the current admin inventory</CardDescription>
             </div>
-            <Activity className="h-5 w-5 text-emerald-600" />
+            <Activity className="h-5 w-5 text-chart-1" />
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center gap-2 text-sm">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+              <span className="h-2.5 w-2.5 rounded-full bg-chart-1" />
               <span className="font-medium text-foreground">
                 {stats.services > 0 || stats.routes > 0
                   ? "Admin API reachable and resources loaded"
@@ -287,7 +287,7 @@ function Dashboard() {
               <CardTitle className="text-base">Traffic topology</CardTitle>
               <CardDescription>How requests are distributed today</CardDescription>
             </div>
-            <Cable className="h-5 w-5 text-blue-600" />
+            <Cable className="h-5 w-5 text-chart-2" />
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-muted-foreground">
             <p>
@@ -308,7 +308,7 @@ function Dashboard() {
               <CardTitle className="text-base">Automation</CardTitle>
               <CardDescription>Runtime dashboard behaviors</CardDescription>
             </div>
-            <RefreshCw className="h-5 w-5 text-amber-600" />
+            <RefreshCw className="h-5 w-5 text-chart-4" />
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-muted-foreground">
             <p>

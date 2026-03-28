@@ -8,350 +8,350 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root";
-import { Route as AboutRouteImport } from "./routes/about";
-import { Route as IndexRouteImport } from "./routes/index";
-import { Route as UpstreamsIndexRouteImport } from "./routes/upstreams/index";
-import { Route as SettingsIndexRouteImport } from "./routes/settings/index";
-import { Route as ServicesIndexRouteImport } from "./routes/services/index";
-import { Route as RoutesIndexRouteImport } from "./routes/routes/index";
-import { Route as PluginsIndexRouteImport } from "./routes/plugins/index";
-import { Route as LlmIndexRouteImport } from "./routes/llm/index";
-import { Route as DashboardIndexRouteImport } from "./routes/dashboard/index";
-import { Route as ConsumersIndexRouteImport } from "./routes/consumers/index";
-import { Route as ServicesServiceIdRouteImport } from "./routes/services/$serviceId";
-import { Route as RoutesRouteIdRouteImport } from "./routes/routes/$routeId";
-import { Route as PluginsPluginIdRouteImport } from "./routes/plugins/$pluginId";
-import { Route as ConsumersConsumerIdRouteImport } from "./routes/consumers/$consumerId";
-import { Route as LlmProvidersProviderIdRouteImport } from "./routes/llm/providers/$providerId";
-import { Route as LlmModelsModelIdRouteImport } from "./routes/llm/models/$modelId";
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as UpstreamsIndexRouteImport } from './routes/upstreams/index'
+import { Route as SettingsIndexRouteImport } from './routes/settings/index'
+import { Route as ServicesIndexRouteImport } from './routes/services/index'
+import { Route as RoutesIndexRouteImport } from './routes/routes/index'
+import { Route as PluginsIndexRouteImport } from './routes/plugins/index'
+import { Route as LlmIndexRouteImport } from './routes/llm/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as ConsumersIndexRouteImport } from './routes/consumers/index'
+import { Route as ServicesServiceIdRouteImport } from './routes/services/$serviceId'
+import { Route as RoutesRouteIdRouteImport } from './routes/routes/$routeId'
+import { Route as PluginsPluginIdRouteImport } from './routes/plugins/$pluginId'
+import { Route as ConsumersConsumerIdRouteImport } from './routes/consumers/$consumerId'
+import { Route as LlmProvidersProviderIdRouteImport } from './routes/llm/providers/$providerId'
+import { Route as LlmModelsModelIdRouteImport } from './routes/llm/models/$modelId'
 
 const AboutRoute = AboutRouteImport.update({
-  id: "/about",
-  path: "/about",
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const IndexRoute = IndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const UpstreamsIndexRoute = UpstreamsIndexRouteImport.update({
-  id: "/upstreams/",
-  path: "/upstreams/",
+  id: '/upstreams/',
+  path: '/upstreams/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const SettingsIndexRoute = SettingsIndexRouteImport.update({
-  id: "/settings/",
-  path: "/settings/",
+  id: '/settings/',
+  path: '/settings/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const ServicesIndexRoute = ServicesIndexRouteImport.update({
-  id: "/services/",
-  path: "/services/",
+  id: '/services/',
+  path: '/services/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const RoutesIndexRoute = RoutesIndexRouteImport.update({
-  id: "/routes/",
-  path: "/routes/",
+  id: '/routes/',
+  path: '/routes/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const PluginsIndexRoute = PluginsIndexRouteImport.update({
-  id: "/plugins/",
-  path: "/plugins/",
+  id: '/plugins/',
+  path: '/plugins/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const LlmIndexRoute = LlmIndexRouteImport.update({
-  id: "/llm/",
-  path: "/llm/",
+  id: '/llm/',
+  path: '/llm/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
-  id: "/dashboard/",
-  path: "/dashboard/",
+  id: '/dashboard/',
+  path: '/dashboard/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const ConsumersIndexRoute = ConsumersIndexRouteImport.update({
-  id: "/consumers/",
-  path: "/consumers/",
+  id: '/consumers/',
+  path: '/consumers/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const ServicesServiceIdRoute = ServicesServiceIdRouteImport.update({
-  id: "/services/$serviceId",
-  path: "/services/$serviceId",
+  id: '/services/$serviceId',
+  path: '/services/$serviceId',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const RoutesRouteIdRoute = RoutesRouteIdRouteImport.update({
-  id: "/routes/$routeId",
-  path: "/routes/$routeId",
+  id: '/routes/$routeId',
+  path: '/routes/$routeId',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const PluginsPluginIdRoute = PluginsPluginIdRouteImport.update({
-  id: "/plugins/$pluginId",
-  path: "/plugins/$pluginId",
+  id: '/plugins/$pluginId',
+  path: '/plugins/$pluginId',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const ConsumersConsumerIdRoute = ConsumersConsumerIdRouteImport.update({
-  id: "/consumers/$consumerId",
-  path: "/consumers/$consumerId",
+  id: '/consumers/$consumerId',
+  path: '/consumers/$consumerId',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const LlmProvidersProviderIdRoute = LlmProvidersProviderIdRouteImport.update({
-  id: "/llm/providers/$providerId",
-  path: "/llm/providers/$providerId",
+  id: '/llm/providers/$providerId',
+  path: '/llm/providers/$providerId',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const LlmModelsModelIdRoute = LlmModelsModelIdRouteImport.update({
-  id: "/llm/models/$modelId",
-  path: "/llm/models/$modelId",
+  id: '/llm/models/$modelId',
+  path: '/llm/models/$modelId',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 
 export interface FileRoutesByFullPath {
-  "/": typeof IndexRoute;
-  "/about": typeof AboutRoute;
-  "/consumers/$consumerId": typeof ConsumersConsumerIdRoute;
-  "/plugins/$pluginId": typeof PluginsPluginIdRoute;
-  "/routes/$routeId": typeof RoutesRouteIdRoute;
-  "/services/$serviceId": typeof ServicesServiceIdRoute;
-  "/consumers/": typeof ConsumersIndexRoute;
-  "/dashboard/": typeof DashboardIndexRoute;
-  "/llm/": typeof LlmIndexRoute;
-  "/plugins/": typeof PluginsIndexRoute;
-  "/routes/": typeof RoutesIndexRoute;
-  "/services/": typeof ServicesIndexRoute;
-  "/settings/": typeof SettingsIndexRoute;
-  "/upstreams/": typeof UpstreamsIndexRoute;
-  "/llm/models/$modelId": typeof LlmModelsModelIdRoute;
-  "/llm/providers/$providerId": typeof LlmProvidersProviderIdRoute;
+  '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/consumers/$consumerId': typeof ConsumersConsumerIdRoute
+  '/plugins/$pluginId': typeof PluginsPluginIdRoute
+  '/routes/$routeId': typeof RoutesRouteIdRoute
+  '/services/$serviceId': typeof ServicesServiceIdRoute
+  '/consumers/': typeof ConsumersIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/llm/': typeof LlmIndexRoute
+  '/plugins/': typeof PluginsIndexRoute
+  '/routes/': typeof RoutesIndexRoute
+  '/services/': typeof ServicesIndexRoute
+  '/settings/': typeof SettingsIndexRoute
+  '/upstreams/': typeof UpstreamsIndexRoute
+  '/llm/models/$modelId': typeof LlmModelsModelIdRoute
+  '/llm/providers/$providerId': typeof LlmProvidersProviderIdRoute
 }
 export interface FileRoutesByTo {
-  "/": typeof IndexRoute;
-  "/about": typeof AboutRoute;
-  "/consumers/$consumerId": typeof ConsumersConsumerIdRoute;
-  "/plugins/$pluginId": typeof PluginsPluginIdRoute;
-  "/routes/$routeId": typeof RoutesRouteIdRoute;
-  "/services/$serviceId": typeof ServicesServiceIdRoute;
-  "/consumers": typeof ConsumersIndexRoute;
-  "/dashboard": typeof DashboardIndexRoute;
-  "/llm": typeof LlmIndexRoute;
-  "/plugins": typeof PluginsIndexRoute;
-  "/routes": typeof RoutesIndexRoute;
-  "/services": typeof ServicesIndexRoute;
-  "/settings": typeof SettingsIndexRoute;
-  "/upstreams": typeof UpstreamsIndexRoute;
-  "/llm/models/$modelId": typeof LlmModelsModelIdRoute;
-  "/llm/providers/$providerId": typeof LlmProvidersProviderIdRoute;
+  '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/consumers/$consumerId': typeof ConsumersConsumerIdRoute
+  '/plugins/$pluginId': typeof PluginsPluginIdRoute
+  '/routes/$routeId': typeof RoutesRouteIdRoute
+  '/services/$serviceId': typeof ServicesServiceIdRoute
+  '/consumers': typeof ConsumersIndexRoute
+  '/dashboard': typeof DashboardIndexRoute
+  '/llm': typeof LlmIndexRoute
+  '/plugins': typeof PluginsIndexRoute
+  '/routes': typeof RoutesIndexRoute
+  '/services': typeof ServicesIndexRoute
+  '/settings': typeof SettingsIndexRoute
+  '/upstreams': typeof UpstreamsIndexRoute
+  '/llm/models/$modelId': typeof LlmModelsModelIdRoute
+  '/llm/providers/$providerId': typeof LlmProvidersProviderIdRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  "/": typeof IndexRoute;
-  "/about": typeof AboutRoute;
-  "/consumers/$consumerId": typeof ConsumersConsumerIdRoute;
-  "/plugins/$pluginId": typeof PluginsPluginIdRoute;
-  "/routes/$routeId": typeof RoutesRouteIdRoute;
-  "/services/$serviceId": typeof ServicesServiceIdRoute;
-  "/consumers/": typeof ConsumersIndexRoute;
-  "/dashboard/": typeof DashboardIndexRoute;
-  "/llm/": typeof LlmIndexRoute;
-  "/plugins/": typeof PluginsIndexRoute;
-  "/routes/": typeof RoutesIndexRoute;
-  "/services/": typeof ServicesIndexRoute;
-  "/settings/": typeof SettingsIndexRoute;
-  "/upstreams/": typeof UpstreamsIndexRoute;
-  "/llm/models/$modelId": typeof LlmModelsModelIdRoute;
-  "/llm/providers/$providerId": typeof LlmProvidersProviderIdRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/consumers/$consumerId': typeof ConsumersConsumerIdRoute
+  '/plugins/$pluginId': typeof PluginsPluginIdRoute
+  '/routes/$routeId': typeof RoutesRouteIdRoute
+  '/services/$serviceId': typeof ServicesServiceIdRoute
+  '/consumers/': typeof ConsumersIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/llm/': typeof LlmIndexRoute
+  '/plugins/': typeof PluginsIndexRoute
+  '/routes/': typeof RoutesIndexRoute
+  '/services/': typeof ServicesIndexRoute
+  '/settings/': typeof SettingsIndexRoute
+  '/upstreams/': typeof UpstreamsIndexRoute
+  '/llm/models/$modelId': typeof LlmModelsModelIdRoute
+  '/llm/providers/$providerId': typeof LlmProvidersProviderIdRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
+  fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | "/"
-    | "/about"
-    | "/consumers/$consumerId"
-    | "/plugins/$pluginId"
-    | "/routes/$routeId"
-    | "/services/$serviceId"
-    | "/consumers/"
-    | "/dashboard/"
-    | "/llm/"
-    | "/plugins/"
-    | "/routes/"
-    | "/services/"
-    | "/settings/"
-    | "/upstreams/"
-    | "/llm/models/$modelId"
-    | "/llm/providers/$providerId";
-  fileRoutesByTo: FileRoutesByTo;
+    | '/'
+    | '/about'
+    | '/consumers/$consumerId'
+    | '/plugins/$pluginId'
+    | '/routes/$routeId'
+    | '/services/$serviceId'
+    | '/consumers/'
+    | '/dashboard/'
+    | '/llm/'
+    | '/plugins/'
+    | '/routes/'
+    | '/services/'
+    | '/settings/'
+    | '/upstreams/'
+    | '/llm/models/$modelId'
+    | '/llm/providers/$providerId'
+  fileRoutesByTo: FileRoutesByTo
   to:
-    | "/"
-    | "/about"
-    | "/consumers/$consumerId"
-    | "/plugins/$pluginId"
-    | "/routes/$routeId"
-    | "/services/$serviceId"
-    | "/consumers"
-    | "/dashboard"
-    | "/llm"
-    | "/plugins"
-    | "/routes"
-    | "/services"
-    | "/settings"
-    | "/upstreams"
-    | "/llm/models/$modelId"
-    | "/llm/providers/$providerId";
+    | '/'
+    | '/about'
+    | '/consumers/$consumerId'
+    | '/plugins/$pluginId'
+    | '/routes/$routeId'
+    | '/services/$serviceId'
+    | '/consumers'
+    | '/dashboard'
+    | '/llm'
+    | '/plugins'
+    | '/routes'
+    | '/services'
+    | '/settings'
+    | '/upstreams'
+    | '/llm/models/$modelId'
+    | '/llm/providers/$providerId'
   id:
-    | "__root__"
-    | "/"
-    | "/about"
-    | "/consumers/$consumerId"
-    | "/plugins/$pluginId"
-    | "/routes/$routeId"
-    | "/services/$serviceId"
-    | "/consumers/"
-    | "/dashboard/"
-    | "/llm/"
-    | "/plugins/"
-    | "/routes/"
-    | "/services/"
-    | "/settings/"
-    | "/upstreams/"
-    | "/llm/models/$modelId"
-    | "/llm/providers/$providerId";
-  fileRoutesById: FileRoutesById;
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/consumers/$consumerId'
+    | '/plugins/$pluginId'
+    | '/routes/$routeId'
+    | '/services/$serviceId'
+    | '/consumers/'
+    | '/dashboard/'
+    | '/llm/'
+    | '/plugins/'
+    | '/routes/'
+    | '/services/'
+    | '/settings/'
+    | '/upstreams/'
+    | '/llm/models/$modelId'
+    | '/llm/providers/$providerId'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  AboutRoute: typeof AboutRoute;
-  ConsumersConsumerIdRoute: typeof ConsumersConsumerIdRoute;
-  PluginsPluginIdRoute: typeof PluginsPluginIdRoute;
-  RoutesRouteIdRoute: typeof RoutesRouteIdRoute;
-  ServicesServiceIdRoute: typeof ServicesServiceIdRoute;
-  ConsumersIndexRoute: typeof ConsumersIndexRoute;
-  DashboardIndexRoute: typeof DashboardIndexRoute;
-  LlmIndexRoute: typeof LlmIndexRoute;
-  PluginsIndexRoute: typeof PluginsIndexRoute;
-  RoutesIndexRoute: typeof RoutesIndexRoute;
-  ServicesIndexRoute: typeof ServicesIndexRoute;
-  SettingsIndexRoute: typeof SettingsIndexRoute;
-  UpstreamsIndexRoute: typeof UpstreamsIndexRoute;
-  LlmModelsModelIdRoute: typeof LlmModelsModelIdRoute;
-  LlmProvidersProviderIdRoute: typeof LlmProvidersProviderIdRoute;
+  IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
+  ConsumersConsumerIdRoute: typeof ConsumersConsumerIdRoute
+  PluginsPluginIdRoute: typeof PluginsPluginIdRoute
+  RoutesRouteIdRoute: typeof RoutesRouteIdRoute
+  ServicesServiceIdRoute: typeof ServicesServiceIdRoute
+  ConsumersIndexRoute: typeof ConsumersIndexRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+  LlmIndexRoute: typeof LlmIndexRoute
+  PluginsIndexRoute: typeof PluginsIndexRoute
+  RoutesIndexRoute: typeof RoutesIndexRoute
+  ServicesIndexRoute: typeof ServicesIndexRoute
+  SettingsIndexRoute: typeof SettingsIndexRoute
+  UpstreamsIndexRoute: typeof UpstreamsIndexRoute
+  LlmModelsModelIdRoute: typeof LlmModelsModelIdRoute
+  LlmProvidersProviderIdRoute: typeof LlmProvidersProviderIdRoute
 }
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/about": {
-      id: "/about";
-      path: "/about";
-      fullPath: "/about";
-      preLoaderRoute: typeof AboutRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/": {
-      id: "/";
-      path: "/";
-      fullPath: "/";
-      preLoaderRoute: typeof IndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/upstreams/": {
-      id: "/upstreams/";
-      path: "/upstreams";
-      fullPath: "/upstreams/";
-      preLoaderRoute: typeof UpstreamsIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/settings/": {
-      id: "/settings/";
-      path: "/settings";
-      fullPath: "/settings/";
-      preLoaderRoute: typeof SettingsIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/services/": {
-      id: "/services/";
-      path: "/services";
-      fullPath: "/services/";
-      preLoaderRoute: typeof ServicesIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/routes/": {
-      id: "/routes/";
-      path: "/routes";
-      fullPath: "/routes/";
-      preLoaderRoute: typeof RoutesIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/plugins/": {
-      id: "/plugins/";
-      path: "/plugins";
-      fullPath: "/plugins/";
-      preLoaderRoute: typeof PluginsIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/llm/": {
-      id: "/llm/";
-      path: "/llm";
-      fullPath: "/llm/";
-      preLoaderRoute: typeof LlmIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/dashboard/": {
-      id: "/dashboard/";
-      path: "/dashboard";
-      fullPath: "/dashboard/";
-      preLoaderRoute: typeof DashboardIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/consumers/": {
-      id: "/consumers/";
-      path: "/consumers";
-      fullPath: "/consumers/";
-      preLoaderRoute: typeof ConsumersIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/services/$serviceId": {
-      id: "/services/$serviceId";
-      path: "/services/$serviceId";
-      fullPath: "/services/$serviceId";
-      preLoaderRoute: typeof ServicesServiceIdRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/routes/$routeId": {
-      id: "/routes/$routeId";
-      path: "/routes/$routeId";
-      fullPath: "/routes/$routeId";
-      preLoaderRoute: typeof RoutesRouteIdRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/plugins/$pluginId": {
-      id: "/plugins/$pluginId";
-      path: "/plugins/$pluginId";
-      fullPath: "/plugins/$pluginId";
-      preLoaderRoute: typeof PluginsPluginIdRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/consumers/$consumerId": {
-      id: "/consumers/$consumerId";
-      path: "/consumers/$consumerId";
-      fullPath: "/consumers/$consumerId";
-      preLoaderRoute: typeof ConsumersConsumerIdRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/llm/providers/$providerId": {
-      id: "/llm/providers/$providerId";
-      path: "/llm/providers/$providerId";
-      fullPath: "/llm/providers/$providerId";
-      preLoaderRoute: typeof LlmProvidersProviderIdRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/llm/models/$modelId": {
-      id: "/llm/models/$modelId";
-      path: "/llm/models/$modelId";
-      fullPath: "/llm/models/$modelId";
-      preLoaderRoute: typeof LlmModelsModelIdRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/upstreams/': {
+      id: '/upstreams/'
+      path: '/upstreams'
+      fullPath: '/upstreams/'
+      preLoaderRoute: typeof UpstreamsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/': {
+      id: '/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof SettingsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/services/': {
+      id: '/services/'
+      path: '/services'
+      fullPath: '/services/'
+      preLoaderRoute: typeof ServicesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/routes/': {
+      id: '/routes/'
+      path: '/routes'
+      fullPath: '/routes/'
+      preLoaderRoute: typeof RoutesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plugins/': {
+      id: '/plugins/'
+      path: '/plugins'
+      fullPath: '/plugins/'
+      preLoaderRoute: typeof PluginsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llm/': {
+      id: '/llm/'
+      path: '/llm'
+      fullPath: '/llm/'
+      preLoaderRoute: typeof LlmIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/dashboard'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/consumers/': {
+      id: '/consumers/'
+      path: '/consumers'
+      fullPath: '/consumers/'
+      preLoaderRoute: typeof ConsumersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/services/$serviceId': {
+      id: '/services/$serviceId'
+      path: '/services/$serviceId'
+      fullPath: '/services/$serviceId'
+      preLoaderRoute: typeof ServicesServiceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/routes/$routeId': {
+      id: '/routes/$routeId'
+      path: '/routes/$routeId'
+      fullPath: '/routes/$routeId'
+      preLoaderRoute: typeof RoutesRouteIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plugins/$pluginId': {
+      id: '/plugins/$pluginId'
+      path: '/plugins/$pluginId'
+      fullPath: '/plugins/$pluginId'
+      preLoaderRoute: typeof PluginsPluginIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/consumers/$consumerId': {
+      id: '/consumers/$consumerId'
+      path: '/consumers/$consumerId'
+      fullPath: '/consumers/$consumerId'
+      preLoaderRoute: typeof ConsumersConsumerIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llm/providers/$providerId': {
+      id: '/llm/providers/$providerId'
+      path: '/llm/providers/$providerId'
+      fullPath: '/llm/providers/$providerId'
+      preLoaderRoute: typeof LlmProvidersProviderIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llm/models/$modelId': {
+      id: '/llm/models/$modelId'
+      path: '/llm/models/$modelId'
+      fullPath: '/llm/models/$modelId'
+      preLoaderRoute: typeof LlmModelsModelIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -372,16 +372,16 @@ const rootRouteChildren: RootRouteChildren = {
   UpstreamsIndexRoute: UpstreamsIndexRoute,
   LlmModelsModelIdRoute: LlmModelsModelIdRoute,
   LlmProvidersProviderIdRoute: LlmProvidersProviderIdRoute,
-};
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()
 
-import type { getRouter } from "./router.tsx";
-import type { createStart } from "@tanstack/react-start";
-declare module "@tanstack/react-start" {
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
   interface Register {
-    ssr: true;
-    router: Awaited<ReturnType<typeof getRouter>>;
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
   }
 }

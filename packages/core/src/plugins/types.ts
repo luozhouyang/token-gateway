@@ -6,6 +6,7 @@ import type { DatabaseService } from "../storage/database.js";
 import type { DatabaseClient, DatabaseTransaction } from "../storage/types.js";
 import type { AppLogger } from "../utils/debug-logger.js";
 import type { HttpRequestSnapshot, HttpRequestState, HttpResponseState } from "./runtime.js";
+import type { ConfigObjectDescriptor } from "./config-descriptor.js";
 import type { LlmRouterPluginConfig } from "./llm/config.js";
 
 /**
@@ -93,9 +94,12 @@ export interface PluginConfigNormalizationContext {
 export interface PluginDefinition {
   name: string;
   version: string;
+  displayName?: string;
+  description?: string;
   priority?: number;
   phases: PluginPhase[];
   configSchema?: ZodType<Record<string, unknown>>;
+  configDescriptor?: ConfigObjectDescriptor;
   normalizeConfig?: (
     config: Record<string, unknown>,
     ctx: PluginConfigNormalizationContext,

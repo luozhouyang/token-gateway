@@ -1,5 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { StructuredObjectField } from "@/components/configs/ConfigFormRenderer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
+import { normalizeStructuredObjectInput } from "@/lib/configs/resource-config";
 import { llmModelsApi, llmProvidersApi, type LlmModel, type LlmProvider } from "@/lib/api/client";
 import { useDashboardSettings } from "@/lib/dashboard-settings";
 import {
@@ -28,8 +29,6 @@ import {
   getErrorMessage,
   joinCommaSeparated,
   parseCommaSeparatedInput,
-  parseJsonInput,
-  stringifyJson,
 } from "@/lib/dashboard-utils";
 import { toast } from "sonner";
 import { ArrowLeft, Bot, Pencil, RefreshCw } from "lucide-react";
@@ -42,7 +41,7 @@ interface ModelFormState {
   providerId: string;
   name: string;
   upstreamModel: string;
-  metadata: string;
+  metadata: Record<string, unknown>;
   enabled: boolean;
   tags: string;
 }
@@ -51,7 +50,7 @@ const EMPTY_MODEL_FORM: ModelFormState = {
   providerId: "",
   name: "",
   upstreamModel: "",
-  metadata: "{}",
+  metadata: {},
   enabled: true,
   tags: "",
 };
@@ -108,7 +107,7 @@ function LlmModelDetailPage() {
       providerId: model.providerId,
       name: model.name,
       upstreamModel: model.upstreamModel,
-      metadata: stringifyJson(model.metadata),
+      metadata: model.metadata || {},
       enabled: model.enabled,
       tags: joinCommaSeparated(model.tags),
     });
@@ -128,7 +127,7 @@ function LlmModelDetailPage() {
         providerId: formState.providerId,
         name: formState.name.trim(),
         upstreamModel: formState.upstreamModel.trim(),
-        metadata: parseJsonInput<Record<string, unknown>>(formState.metadata, "Model metadata"),
+        metadata: normalizeStructuredObjectInput(formState.metadata),
         enabled: formState.enabled,
         tags: parseCommaSeparatedInput(formState.tags),
       });
@@ -341,18 +340,12 @@ function LlmModelDetailPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="model-metadata">Metadata JSON</Label>
-              <Textarea
-                id="model-metadata"
-                value={formState.metadata}
-                onChange={(event) =>
-                  setFormState((current) => ({ ...current, metadata: event.target.value }))
-                }
-                className="min-h-32 font-mono"
-                placeholder='{"contextWindow": 128000}'
-              />
-            </div>
+            <StructuredObjectField
+              label="Metadata"
+              description="Attach structured model metadata without editing a raw JSON blob."
+              value={formState.metadata}
+              onChange={(metadata) => setFormState((current) => ({ ...current, metadata }))}
+            />
 
             <div className="space-y-2">
               <Label htmlFor="model-tags">Tags</Label>

@@ -6,6 +6,8 @@ import type { PluginContext, PluginDefinition } from "../types.js";
 export const LlmInboundOpenAIPlugin: PluginDefinition = {
   name: "llm-inbound-openai",
   version: "1.0.0",
+  displayName: "LLM Inbound OpenAI",
+  description: "Normalize OpenAI-compatible inbound requests before routing.",
   priority: 720,
   phases: ["access"],
 

@@ -1,3 +1,4 @@
+import type { ConfigFieldDefinition, ConfigObjectDescriptor } from "../config-descriptor.js";
 import type { PluginContext } from "../types.js";
 import { isJsonContentType, readJsonObject, writeJsonObject, writeBodyText } from "../runtime.js";
 
@@ -39,6 +40,194 @@ interface TransformerConfig {
     json?: MappingInput;
   };
 }
+
+const TEMPLATE_DESCRIPTION =
+  "Supports template expressions like $(request_id), $(headers.x-api-key), and $(query_params.user).";
+
+const STRUCTURED_BODY_DESCRIPTION =
+  "Values may be strings, numbers, booleans, arrays, or nested objects. String values also support templates.";
+
+function createRemoveField(includeQuerystring: boolean): ConfigFieldDefinition {
+  return {
+    key: "remove",
+    kind: "object",
+    label: "Remove",
+    description: "Delete fields before the request or response continues.",
+    fields: [
+      {
+        key: "headers",
+        kind: "string-list",
+        label: "Headers",
+        itemLabel: "Header name",
+      },
+      ...(includeQuerystring
+        ? [
+            {
+              key: "querystring",
+              kind: "string-list",
+              label: "Query parameters",
+              itemLabel: "Query parameter",
+            } satisfies ConfigFieldDefinition,
+          ]
+        : []),
+      {
+        key: "body",
+        kind: "string-list",
+        label: "JSON body fields",
+        itemLabel: "Field name",
+      },
+    ],
+  };
+}
+
+function createRenameField(includeQuerystring: boolean): ConfigFieldDefinition {
+  return {
+    key: "rename",
+    kind: "object",
+    label: "Rename",
+    description: "Rename existing fields while preserving their current values.",
+    fields: [
+      {
+        key: "headers",
+        kind: "string-map",
+        label: "Header renames",
+        keyLabel: "Current header",
+        valueLabel: "New header",
+      },
+      ...(includeQuerystring
+        ? [
+            {
+              key: "querystring",
+              kind: "string-map",
+              label: "Query parameter renames",
+              keyLabel: "Current parameter",
+              valueLabel: "New parameter",
+            } satisfies ConfigFieldDefinition,
+          ]
+        : []),
+      {
+        key: "body",
+        kind: "string-map",
+        label: "JSON body renames",
+        keyLabel: "Current field",
+        valueLabel: "New field",
+      },
+    ],
+  };
+}
+
+function createHeaderMapField(label: string): ConfigFieldDefinition {
+  return {
+    key: "headers",
+    kind: "string-map",
+    label,
+    description: TEMPLATE_DESCRIPTION,
+    keyLabel: "Header",
+    valueLabel: "Value",
+  };
+}
+
+function createQuerystringMapField(label: string): ConfigFieldDefinition {
+  return {
+    key: "querystring",
+    kind: "string-map",
+    label,
+    description: TEMPLATE_DESCRIPTION,
+    keyLabel: "Parameter",
+    valueLabel: "Value",
+  };
+}
+
+function createStructuredBodyField(label: string): ConfigFieldDefinition {
+  return {
+    key: "body",
+    kind: "object",
+    label,
+    description: STRUCTURED_BODY_DESCRIPTION,
+    additionalProperties: true,
+  };
+}
+
+function createReplaceField(includeQuerystring: boolean): ConfigFieldDefinition {
+  return {
+    key: "replace",
+    kind: "object",
+    label: "Replace",
+    description: "Replace existing values without creating missing keys.",
+    fields: includeQuerystring
+      ? [
+          {
+            key: "path",
+            kind: "string",
+            label: "Request path",
+            description: TEMPLATE_DESCRIPTION,
+            placeholder: "/v1/internal/$(uri_captures.model)",
+          } satisfies ConfigFieldDefinition,
+          {
+            key: "method",
+            kind: "string",
+            label: "HTTP method",
+            description: "Overrides the outbound request method.",
+            placeholder: "POST",
+          } satisfies ConfigFieldDefinition,
+          createHeaderMapField("Header replacements"),
+          createQuerystringMapField("Query parameter replacements"),
+          createStructuredBodyField("JSON body replacements"),
+        ]
+      : [
+          createHeaderMapField("Header replacements"),
+          createStructuredBodyField("JSON body replacements"),
+        ],
+  };
+}
+
+function createAddField(includeQuerystring: boolean): ConfigFieldDefinition {
+  return {
+    key: "add",
+    kind: "object",
+    label: "Add",
+    description: "Set values only when the target key does not already exist.",
+    fields: [
+      createHeaderMapField("Headers to add"),
+      ...(includeQuerystring ? [createQuerystringMapField("Query parameters to add")] : []),
+      createStructuredBodyField("JSON body fields to add"),
+    ],
+  };
+}
+
+function createAppendField(includeQuerystring: boolean): ConfigFieldDefinition {
+  return {
+    key: "append",
+    kind: "object",
+    label: "Append",
+    description: "Append values to repeated fields such as headers, query parameters, or arrays.",
+    fields: [
+      createHeaderMapField("Headers to append"),
+      ...(includeQuerystring ? [createQuerystringMapField("Query parameters to append")] : []),
+      createStructuredBodyField("JSON body fields to append"),
+    ],
+  };
+}
+
+export const requestTransformerConfigDescriptor: ConfigObjectDescriptor = {
+  fields: [
+    createRemoveField(true),
+    createRenameField(true),
+    createReplaceField(true),
+    createAddField(true),
+    createAppendField(true),
+  ],
+};
+
+export const responseTransformerConfigDescriptor: ConfigObjectDescriptor = {
+  fields: [
+    createRemoveField(false),
+    createRenameField(false),
+    createReplaceField(false),
+    createAddField(false),
+    createAppendField(false),
+  ],
+};
 
 export function applyRequestTransformations(ctx: PluginContext): void {
   const config = ctx.config as TransformerConfig;

@@ -1,5 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { ConfigFormRenderer, StructuredObjectField } from "@/components/configs/ConfigFormRenderer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/resources/MetricCard";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
 import {
   LLM_CLIENT_PROFILES,
   LLM_PROVIDER_PROTOCOLS,
@@ -33,10 +33,17 @@ import {
   type LlmClientProfile,
   type LlmModel,
   type LlmProvider,
-  type LlmProviderAuthConfig,
   type LlmProviderProtocol,
   type LlmProviderVendor,
 } from "@/lib/api/client";
+import { createLlmProviderConfigDescriptor } from "@/lib/configs/descriptors";
+import {
+  normalizeLlmProviderAuthInput,
+  normalizeStringRecordInput,
+  normalizeStructuredObjectInput,
+  normalizeStructuredObjectInputOrEmpty,
+} from "@/lib/configs/resource-config";
+import { ensureRecord } from "@/lib/configs/utils";
 import { useDashboardSettings } from "@/lib/dashboard-settings";
 import {
   confirmAction,
@@ -44,9 +51,7 @@ import {
   getErrorMessage,
   joinCommaSeparated,
   parseCommaSeparatedInput,
-  parseJsonInput,
   previewJson,
-  stringifyJson,
 } from "@/lib/dashboard-utils";
 import { toast } from "sonner";
 import { Bot, Database, Pencil, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
@@ -62,9 +67,9 @@ interface ProviderFormState {
   protocol: LlmProviderProtocol;
   baseUrl: string;
   clients: string;
-  headers: string;
-  auth: string;
-  adapterConfig: string;
+  headers: Record<string, unknown>;
+  auth: Record<string, unknown>;
+  adapterConfig: Record<string, unknown>;
   enabled: boolean;
   tags: string;
 }
@@ -73,7 +78,7 @@ interface ModelFormState {
   providerId: string;
   name: string;
   upstreamModel: string;
-  metadata: string;
+  metadata: Record<string, unknown>;
   enabled: boolean;
   tags: string;
 }
@@ -85,9 +90,9 @@ const EMPTY_PROVIDER_FORM: ProviderFormState = {
   protocol: "openai-compatible",
   baseUrl: "",
   clients: "",
-  headers: "{}",
-  auth: stringifyJson({ type: "none" }),
-  adapterConfig: "{}",
+  headers: {},
+  auth: { type: "none" },
+  adapterConfig: {},
   enabled: true,
   tags: "",
 };
@@ -96,10 +101,12 @@ const EMPTY_MODEL_FORM: ModelFormState = {
   providerId: "",
   name: "",
   upstreamModel: "",
-  metadata: "{}",
+  metadata: {},
   enabled: true,
   tags: "",
 };
+
+const PROVIDER_CONFIG_DESCRIPTOR = createLlmProviderConfigDescriptor();
 
 function LlmResourcesPage() {
   const { settings } = useDashboardSettings();
@@ -164,9 +171,9 @@ function LlmResourcesPage() {
       protocol: provider.protocol,
       baseUrl: provider.baseUrl,
       clients: joinCommaSeparated(provider.clients),
-      headers: stringifyJson(provider.headers),
-      auth: stringifyJson(provider.auth),
-      adapterConfig: stringifyJson(provider.adapterConfig),
+      headers: provider.headers || {},
+      auth: ensureRecord(provider.auth),
+      adapterConfig: provider.adapterConfig || {},
       enabled: provider.enabled,
       tags: joinCommaSeparated(provider.tags),
     });
@@ -188,7 +195,7 @@ function LlmResourcesPage() {
       providerId: model.providerId,
       name: model.name,
       upstreamModel: model.upstreamModel,
-      metadata: stringifyJson(model.metadata),
+      metadata: model.metadata || {},
       enabled: model.enabled,
       tags: joinCommaSeparated(model.tags),
     });
@@ -208,20 +215,9 @@ function LlmResourcesPage() {
         protocol: providerFormState.protocol,
         baseUrl: providerFormState.baseUrl.trim(),
         clients: parseClientProfiles(providerFormState.clients),
-        headers:
-          parseJsonInput<Record<string, string>>(providerFormState.headers, "Provider headers") ||
-          {},
-        auth: parseJsonInput<LlmProviderAuthConfig>(
-          providerFormState.auth,
-          "Provider auth config",
-        ) || {
-          type: "none",
-        },
-        adapterConfig:
-          parseJsonInput<Record<string, unknown>>(
-            providerFormState.adapterConfig,
-            "Adapter config",
-          ) || {},
+        headers: normalizeStringRecordInput(providerFormState.headers),
+        auth: normalizeLlmProviderAuthInput(providerFormState.auth),
+        adapterConfig: normalizeStructuredObjectInputOrEmpty(providerFormState.adapterConfig),
         enabled: providerFormState.enabled,
         tags: parseCommaSeparatedInput(providerFormState.tags),
       };
@@ -255,10 +251,7 @@ function LlmResourcesPage() {
         providerId: modelFormState.providerId,
         name: modelFormState.name.trim(),
         upstreamModel: modelFormState.upstreamModel.trim(),
-        metadata: parseJsonInput<Record<string, unknown>>(
-          modelFormState.metadata,
-          "Model metadata",
-        ),
+        metadata: normalizeStructuredObjectInput(modelFormState.metadata),
         enabled: modelFormState.enabled,
         tags: parseCommaSeparatedInput(modelFormState.tags),
       };
@@ -812,32 +805,21 @@ function LlmResourcesPage() {
               />
             </div>
 
-            <JsonField
-              id="provider-headers"
-              label="Headers JSON"
-              value={providerFormState.headers}
+            <ConfigFormRenderer
+              fields={PROVIDER_CONFIG_DESCRIPTOR.fields}
+              value={{
+                headers: providerFormState.headers,
+                auth: providerFormState.auth,
+                adapterConfig: providerFormState.adapterConfig,
+              }}
               onChange={(value) =>
-                setProviderFormState((current) => ({ ...current, headers: value }))
+                setProviderFormState((current) => ({
+                  ...current,
+                  headers: ensureRecord(value.headers),
+                  auth: ensureRecord(value.auth),
+                  adapterConfig: ensureRecord(value.adapterConfig),
+                }))
               }
-              placeholder='{"x-tenant": "gateway"}'
-            />
-
-            <JsonField
-              id="provider-auth"
-              label="Auth JSON"
-              value={providerFormState.auth}
-              onChange={(value) => setProviderFormState((current) => ({ ...current, auth: value }))}
-              placeholder='{"type": "bearer", "tokenEnv": "OPENAI_API_KEY"}'
-            />
-
-            <JsonField
-              id="provider-adapter-config"
-              label="Adapter config JSON"
-              value={providerFormState.adapterConfig}
-              onChange={(value) =>
-                setProviderFormState((current) => ({ ...current, adapterConfig: value }))
-              }
-              placeholder="{}"
             />
 
             <div className="space-y-2">
@@ -935,14 +917,11 @@ function LlmResourcesPage() {
               />
             </div>
 
-            <JsonField
-              id="model-metadata"
-              label="Metadata JSON"
+            <StructuredObjectField
+              label="Metadata"
+              description="Attach structured model metadata without editing a raw JSON blob."
               value={modelFormState.metadata}
-              onChange={(value) =>
-                setModelFormState((current) => ({ ...current, metadata: value }))
-              }
-              placeholder='{"contextWindow": 128000}'
+              onChange={(metadata) => setModelFormState((current) => ({ ...current, metadata }))}
             />
 
             <div className="space-y-2">
@@ -968,27 +947,6 @@ function LlmResourcesPage() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-function JsonField(props: {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={props.id}>{props.label}</Label>
-      <Textarea
-        id={props.id}
-        value={props.value}
-        onChange={(event) => props.onChange(event.target.value)}
-        className="min-h-32 font-mono"
-        placeholder={props.placeholder}
-      />
     </div>
   );
 }

@@ -22,7 +22,11 @@ import {
   type StoredLlmProvider,
 } from "../llm/provider-adapters.js";
 import { normalizeLlmRequest } from "../llm/normalized-request.js";
-import { type LlmClientProfile, type NormalizedLlmRequest } from "../llm/types.js";
+import {
+  LLM_CLIENT_PROFILES,
+  type LlmClientProfile,
+  type NormalizedLlmRequest,
+} from "../llm/types.js";
 import type { PluginContext, PluginDefinition, PluginHandlerResult } from "../types.js";
 
 type LlmRouterConfig = LlmRouterPluginConfig;
@@ -73,9 +77,112 @@ interface LlmRouterStorage {
 export const LlmRouterPlugin: PluginDefinition = {
   name: "llm-router",
   version: "1.0.0",
+  displayName: "LLM Router",
+  description: "Resolve provider and model resources, then proxy LLM traffic with retries.",
   priority: 700,
   phases: ["access"],
   configSchema: LlmRouterConfigSchema,
+  configDescriptor: {
+    fields: [
+      {
+        key: "clientProfile",
+        kind: "select",
+        label: "Client profile",
+        description: "Auto-detect the incoming client or force a specific request normalizer.",
+        options: [
+          { label: "Auto", value: "auto" },
+          ...LLM_CLIENT_PROFILES.map((profile) => ({
+            label: profile,
+            value: profile,
+          })),
+        ],
+      },
+      {
+        key: "requestTimeoutMs",
+        kind: "number",
+        label: "Request timeout (ms)",
+        min: 1,
+        max: 300000,
+      },
+      {
+        key: "maxRetries",
+        kind: "number",
+        label: "Retry attempts",
+        description: "Additional upstream attempts after the initial request.",
+        min: 0,
+        max: 10,
+      },
+      {
+        key: "retryOnStatus",
+        kind: "number-list",
+        label: "Retry status codes",
+        itemLabel: "Status code",
+        min: 100,
+        max: 599,
+      },
+      {
+        key: "circuitBreaker",
+        kind: "object",
+        label: "Circuit breaker",
+        fields: [
+          {
+            key: "failureThreshold",
+            kind: "number",
+            label: "Failure threshold",
+            min: 1,
+            max: 20,
+          },
+          {
+            key: "successThreshold",
+            kind: "number",
+            label: "Success threshold",
+            min: 1,
+            max: 10,
+          },
+          {
+            key: "openTimeoutMs",
+            kind: "number",
+            label: "Open timeout (ms)",
+            min: 0,
+            max: 300000,
+          },
+          {
+            key: "minimumRequests",
+            kind: "number",
+            label: "Minimum requests",
+            min: 1,
+            max: 100,
+          },
+          {
+            key: "errorRateThreshold",
+            kind: "number",
+            label: "Error rate threshold",
+            description: "Value between 0 and 1.",
+            min: 0,
+            max: 1,
+            step: 0.05,
+          },
+        ],
+      },
+      {
+        key: "logging",
+        kind: "object",
+        label: "Request logging",
+        fields: [
+          {
+            key: "enabled",
+            kind: "boolean",
+            label: "Persist attempt logs",
+          },
+          {
+            key: "storeBodies",
+            kind: "boolean",
+            label: "Store request and response bodies",
+          },
+        ],
+      },
+    ],
+  },
   createStorage: (ctx) => createLlmRouterStorage(ctx.rawDb),
 
   onAccess: async (ctx: PluginContext): Promise<PluginHandlerResult> => {

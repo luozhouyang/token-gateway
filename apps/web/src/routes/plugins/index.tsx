@@ -1,5 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { ConfigFormRenderer, StructuredObjectField } from "@/components/configs/ConfigFormRenderer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/resources/MetricCard";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
+import { normalizeStructuredObjectInputOrEmpty } from "@/lib/configs/resource-config";
 import {
   consumersApi,
   pluginsApi,
@@ -31,6 +32,7 @@ import {
   servicesApi,
   type Consumer,
   type Plugin,
+  type PluginDefinitionSummary,
   type Route as RouteConfig,
   type Service,
 } from "@/lib/api/client";
@@ -42,9 +44,7 @@ import {
   getErrorMessage,
   joinCommaSeparated,
   parseCommaSeparatedInput,
-  parseJsonInput,
   previewJson,
-  stringifyJson,
 } from "@/lib/dashboard-utils";
 import { toast } from "sonner";
 import {
@@ -67,7 +67,7 @@ interface PluginFormState {
   serviceId: string;
   routeId: string;
   consumerId: string;
-  config: string;
+  config: Record<string, unknown>;
   enabled: boolean;
   tags: string;
 }
@@ -77,7 +77,7 @@ const EMPTY_FORM: PluginFormState = {
   serviceId: "",
   routeId: "",
   consumerId: "",
-  config: "{}",
+  config: {},
   enabled: true,
   tags: "",
 };
@@ -85,6 +85,7 @@ const EMPTY_FORM: PluginFormState = {
 function PluginsPage() {
   const { settings } = useDashboardSettings();
   const [plugins, setPlugins] = useState<Plugin[]>([]);
+  const [pluginDefinitions, setPluginDefinitions] = useState<PluginDefinitionSummary[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [routes, setRoutes] = useState<RouteConfig[]>([]);
   const [consumers, setConsumers] = useState<Consumer[]>([]);
@@ -111,14 +112,17 @@ function PluginsPage() {
         setLoading(true);
       }
 
-      const [pluginList, serviceList, routeList, consumerList] = await Promise.all([
-        pluginsApi.list(),
-        servicesApi.list(),
-        routesApi.list(),
-        consumersApi.list(),
-      ]);
+      const [pluginList, pluginDefinitionList, serviceList, routeList, consumerList] =
+        await Promise.all([
+          pluginsApi.list(),
+          pluginsApi.listDefinitions(),
+          servicesApi.list(),
+          routesApi.list(),
+          consumersApi.list(),
+        ]);
 
       setPlugins(pluginList);
+      setPluginDefinitions(pluginDefinitionList);
       setServices(serviceList);
       setRoutes(routeList);
       setConsumers(consumerList);
@@ -143,7 +147,7 @@ function PluginsPage() {
       serviceId: plugin.serviceId || "",
       routeId: plugin.routeId || "",
       consumerId: plugin.consumerId || "",
-      config: stringifyJson(plugin.config || {}),
+      config: plugin.config || {},
       enabled: plugin.enabled ?? true,
       tags: joinCommaSeparated(plugin.tags),
     });
@@ -161,7 +165,7 @@ function PluginsPage() {
         serviceId: formState.serviceId || undefined,
         routeId: formState.routeId || undefined,
         consumerId: formState.consumerId || undefined,
-        config: parseJsonInput<Record<string, unknown>>(formState.config, "Plugin config"),
+        config: normalizeStructuredObjectInputOrEmpty(formState.config),
         enabled: formState.enabled,
         tags: parseCommaSeparatedInput(formState.tags),
       };
@@ -230,6 +234,34 @@ function PluginsPage() {
     () => new Map(consumers.map((item) => [item.id, item.username || item.customId || item.id])),
     [consumers],
   );
+  const selectedDefinition = pluginDefinitions.find(
+    (definition) => definition.name === formState.name.trim(),
+  );
+  const selectedPluginValue = selectedDefinition
+    ? selectedDefinition.name
+    : formState.name.trim().length > 0
+      ? "__custom__"
+      : "";
+
+  function handlePluginSelectionChange(value: string) {
+    if (value === "__custom__") {
+      setFormState((current) => ({
+        ...current,
+        name:
+          current.name && !pluginDefinitions.some((item) => item.name === current.name)
+            ? current.name
+            : "",
+        config: {},
+      }));
+      return;
+    }
+
+    setFormState((current) => ({
+      ...current,
+      name: value,
+      config: {},
+    }));
+  }
 
   const filteredPlugins = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -416,7 +448,7 @@ function PluginsPage() {
                         className="inline-flex items-center gap-2 text-sm font-medium text-foreground"
                       >
                         {(plugin.enabled ?? true) ? (
-                          <ToggleRight className="h-5 w-5 text-emerald-600" />
+                          <ToggleRight className="h-5 w-5 text-chart-1" />
                         ) : (
                           <ToggleLeft className="h-5 w-5 text-muted-foreground" />
                         )}
@@ -461,17 +493,49 @@ function PluginsPage() {
           </DialogHeader>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <Label htmlFor="plugin-name">Name</Label>
-              <Input
-                id="plugin-name"
-                value={formState.name}
-                onChange={(event) =>
-                  setFormState((current) => ({ ...current, name: event.target.value }))
-                }
-                placeholder="rate-limit"
-                required
-              />
+              <Label htmlFor="plugin-name-select">Plugin</Label>
+              <Select
+                id="plugin-name-select"
+                value={selectedPluginValue}
+                onChange={(event) => handlePluginSelectionChange(event.target.value)}
+              >
+                <option value="">Select plugin</option>
+                {pluginDefinitions.map((definition) => (
+                  <option key={definition.name} value={definition.name}>
+                    {definition.displayName}
+                  </option>
+                ))}
+                <option value="__custom__">Custom plugin</option>
+              </Select>
             </div>
+
+            {selectedPluginValue === "__custom__" ? (
+              <div className="space-y-2">
+                <Label htmlFor="plugin-name">Plugin name</Label>
+                <Input
+                  id="plugin-name"
+                  value={formState.name}
+                  onChange={(event) =>
+                    setFormState((current) => ({ ...current, name: event.target.value }))
+                  }
+                  placeholder="my-company-plugin"
+                  required
+                />
+              </div>
+            ) : null}
+
+            {selectedDefinition ? (
+              <div className="rounded-lg border border-border bg-muted/30 px-4 py-3">
+                <p className="text-sm font-medium text-foreground">
+                  {selectedDefinition.displayName}
+                </p>
+                {selectedDefinition.description ? (
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {selectedDefinition.description}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
 
             <div className="grid gap-4 md:grid-cols-3">
               <div className="space-y-2">
@@ -542,18 +606,26 @@ function PluginsPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="plugin-config">Config JSON</Label>
-              <Textarea
-                id="plugin-config"
+            {selectedDefinition?.configDescriptor ? (
+              <ConfigFormRenderer
+                fields={selectedDefinition.configDescriptor.fields}
                 value={formState.config}
-                onChange={(event) =>
-                  setFormState((current) => ({ ...current, config: event.target.value }))
-                }
-                className="min-h-40 font-mono"
-                placeholder='{"minute": 100}'
+                onChange={(config) => setFormState((current) => ({ ...current, config }))}
+                showAdvancedJson
+                advancedJsonLabel="Advanced plugin config"
               />
-            </div>
+            ) : formState.name.trim() ? (
+              <StructuredObjectField
+                label="Plugin config"
+                description="Unknown plugins fall back to a generic object editor."
+                value={formState.config}
+                onChange={(config) => setFormState((current) => ({ ...current, config }))}
+              />
+            ) : (
+              <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+                Select a plugin to configure its fields.
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="plugin-tags">Tags</Label>
@@ -571,7 +643,7 @@ function PluginsPage() {
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving}>
+              <Button type="submit" disabled={saving || !formState.name.trim()}>
                 {editingPlugin ? "Save Changes" : "Create Plugin"}
               </Button>
             </DialogFooter>

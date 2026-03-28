@@ -32,9 +32,55 @@ interface RateLimitStorage {
 export const RateLimitPlugin: PluginDefinition = {
   name: "rate-limit",
   version: "3.0.0",
+  displayName: "Rate Limit",
+  description: "Throttle requests by IP, header, or authenticated consumer.",
   priority: 910,
   phases: ["access", "response"],
   configSchema: rateLimitConfigSchema,
+  configDescriptor: {
+    fields: [
+      {
+        key: "limit",
+        kind: "number",
+        label: "Request limit",
+        description: "Maximum number of requests allowed inside the window.",
+        min: 1,
+      },
+      {
+        key: "window",
+        kind: "number",
+        label: "Window seconds",
+        description: "Duration of each rate limit window in seconds.",
+        min: 1,
+      },
+      {
+        key: "key",
+        kind: "select",
+        label: "Counter strategy",
+        options: [
+          { label: "Client IP", value: "ip" },
+          { label: "Header", value: "header" },
+          { label: "Consumer", value: "consumer" },
+        ],
+      },
+      {
+        key: "headerName",
+        kind: "string",
+        label: "Header name",
+        description: "Required when the counter strategy uses a request header.",
+        placeholder: "x-api-key",
+        visibleWhen: {
+          key: "key",
+          equals: "header",
+        },
+      },
+      {
+        key: "headers",
+        kind: "boolean",
+        label: "Emit rate limit headers",
+      },
+    ],
+  },
   createStorage: (ctx) => createRateLimitStorage(ctx.rawDb),
 
   onAccess: async (ctx: PluginContext): Promise<PluginHandlerResult | void> => {

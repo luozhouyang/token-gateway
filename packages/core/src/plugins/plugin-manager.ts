@@ -48,6 +48,22 @@ export class PluginManager {
     this.pluginStorageCache.delete(name);
   }
 
+  listAvailableDefinitions(): PluginDefinition[] {
+    const definitions = new Map<string, PluginDefinition>();
+
+    for (const definition of this.loader.listBuiltinDefinitions()) {
+      definitions.set(definition.name, definition);
+    }
+
+    for (const definition of this.customPlugins.values()) {
+      definitions.set(definition.name, definition);
+    }
+
+    return Array.from(definitions.values()).sort((left, right) =>
+      left.name.localeCompare(right.name),
+    );
+  }
+
   async getPluginInstancesForRoute(routeId: string, serviceId?: string): Promise<PluginInstance[]> {
     return this.filterExactScope({
       routeId,

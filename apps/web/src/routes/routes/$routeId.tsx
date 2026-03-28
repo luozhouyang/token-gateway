@@ -1,5 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { StructuredObjectField } from "@/components/configs/ConfigFormRenderer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PluginBindingsSection } from "@/components/plugins/PluginBindingsSection";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
+import { normalizeRouteHeadersInput } from "@/lib/configs/resource-config";
 import { routesApi, servicesApi, type Route as RouteConfig, type Service } from "@/lib/api/client";
 import { useDashboardSettings } from "@/lib/dashboard-settings";
 import {
@@ -30,9 +31,7 @@ import {
   getErrorMessage,
   joinCommaSeparated,
   parseCommaSeparatedInput,
-  parseJsonInput,
   parseOptionalNumber,
-  stringifyJson,
 } from "@/lib/dashboard-utils";
 import { toast } from "sonner";
 import { ArrowLeft, Pencil, RefreshCw, Route as RouteIcon } from "lucide-react";
@@ -51,7 +50,7 @@ interface RouteFormState {
   snis: string;
   sources: string;
   destinations: string;
-  headers: string;
+  headers: Record<string, unknown>;
   stripPath: boolean;
   preserveHost: boolean;
   regexPriority: string;
@@ -69,7 +68,7 @@ const EMPTY_FORM: RouteFormState = {
   snis: "",
   sources: "",
   destinations: "",
-  headers: "{}",
+  headers: {},
   stripPath: false,
   preserveHost: false,
   regexPriority: "0",
@@ -135,7 +134,7 @@ function RouteDetailPage() {
       snis: joinCommaSeparated(route.snis),
       sources: joinCommaSeparated(route.sources),
       destinations: joinCommaSeparated(route.destinations),
-      headers: stringifyJson(route.headers || {}),
+      headers: route.headers || {},
       stripPath: route.stripPath ?? false,
       preserveHost: route.preserveHost ?? false,
       regexPriority: String(route.regexPriority ?? 0),
@@ -164,7 +163,7 @@ function RouteDetailPage() {
         snis: parseCommaSeparatedInput(formState.snis),
         sources: parseCommaSeparatedInput(formState.sources),
         destinations: parseCommaSeparatedInput(formState.destinations),
-        headers: parseJsonInput<Record<string, string | string[]>>(formState.headers, "Headers"),
+        headers: normalizeRouteHeadersInput(formState.headers),
         stripPath: formState.stripPath,
         preserveHost: formState.preserveHost,
         regexPriority: parseOptionalNumber(formState.regexPriority),
@@ -503,18 +502,12 @@ function RouteDetailPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="route-headers">Headers JSON</Label>
-              <Textarea
-                id="route-headers"
-                value={formState.headers}
-                onChange={(event) =>
-                  setFormState((current) => ({ ...current, headers: event.target.value }))
-                }
-                className="min-h-40 font-mono"
-                placeholder='{"x-region": ["cn-sh", "cn-bj"]}'
-              />
-            </div>
+            <StructuredObjectField
+              label="Headers"
+              description="Add header match rules with string or string-array values."
+              value={formState.headers}
+              onChange={(headers) => setFormState((current) => ({ ...current, headers }))}
+            />
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>

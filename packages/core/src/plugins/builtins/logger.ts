@@ -3,8 +3,35 @@ import type { PluginContext, PluginDefinition } from "../types.js";
 export const LoggerPlugin: PluginDefinition = {
   name: "logger",
   version: "2.0.0",
+  displayName: "Logger",
+  description: "Write request and response activity to the process log.",
   priority: 4,
   phases: ["access", "log"],
+  configDescriptor: {
+    fields: [
+      {
+        key: "level",
+        kind: "select",
+        label: "Log level",
+        description: "Debug includes request headers and routing context.",
+        options: [
+          { label: "Debug", value: "debug" },
+          { label: "Info", value: "info" },
+          { label: "Warn", value: "warn" },
+          { label: "Error", value: "error" },
+        ],
+      },
+      {
+        key: "format",
+        kind: "select",
+        label: "Output format",
+        options: [
+          { label: "JSON", value: "json" },
+          { label: "Text", value: "text" },
+        ],
+      },
+    ],
+  },
 
   onAccess: (ctx: PluginContext): void => {
     const level = getLevel(ctx);

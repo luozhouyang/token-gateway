@@ -75,7 +75,7 @@ program
       const dbDir = path.dirname(dbPath);
       await fs.mkdir(dbDir, { recursive: true });
 
-      runMigrations(dbPath);
+      await runMigrations(dbPath);
       database = new DatabaseService(dbPath);
 
       const uiDistPath = await resolveUiDistPath({

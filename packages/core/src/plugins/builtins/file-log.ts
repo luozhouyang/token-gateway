@@ -12,8 +12,27 @@ interface FileLogConfig {
 export const FileLogPlugin: PluginDefinition = {
   name: "file-log",
   version: "1.0.0",
+  displayName: "File Log",
+  description: "Append structured request logs to a local file.",
   priority: 9,
   phases: ["log"],
+  configDescriptor: {
+    fields: [
+      {
+        key: "path",
+        kind: "string",
+        label: "Log file path",
+        description: "The parent directory is created automatically when needed.",
+        placeholder: "/var/log/minigateway/access.log",
+        required: true,
+      },
+      {
+        key: "include_body",
+        kind: "boolean",
+        label: "Include request and response bodies",
+      },
+    ],
+  },
 
   onLog: async (ctx: PluginContext): Promise<void> => {
     const config = ctx.config as unknown as FileLogConfig;

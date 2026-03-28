@@ -1,6 +1,7 @@
 // Plugin system exports
 
 export * from "./types.js";
+export * from "./config-descriptor.js";
 export * from "./runtime.js";
 export * from "./storage-context.js";
 export * from "./plugin-migration-runner.js";

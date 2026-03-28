@@ -39,9 +39,27 @@ interface KeyAuthStorage {
 export const KeyAuthPlugin: PluginDefinition = {
   name: "key-auth",
   version: "3.0.0",
+  displayName: "Key Auth",
+  description: "Authenticate requests by API key and resolve the matching consumer.",
   priority: 1250,
   phases: ["access"],
   configSchema: keyAuthConfigSchema,
+  configDescriptor: {
+    fields: [
+      {
+        key: "keyNames",
+        kind: "string-list",
+        label: "Accepted key names",
+        description: "Headers or query parameters checked for the API key.",
+        itemLabel: "Key name",
+      },
+      {
+        key: "hideCredentials",
+        kind: "boolean",
+        label: "Strip credential before proxying",
+      },
+    ],
+  },
   createStorage: (ctx) => createKeyAuthStorage(ctx.rawDb),
 
   onAccess: async (ctx: PluginContext): Promise<PluginHandlerResult | void> => {

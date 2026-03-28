@@ -1,5 +1,6 @@
 // API client for MiniGateway Admin API.
 
+import type { ConfigObjectDescriptor } from "@/lib/configs/types";
 import { DEFAULT_DASHBOARD_SETTINGS, readDashboardSettings } from "@/lib/dashboard-settings";
 
 const DEFAULT_PAGE_LIMIT = 100;
@@ -94,6 +95,16 @@ export interface Plugin {
   tags?: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface PluginDefinitionSummary {
+  name: string;
+  displayName: string;
+  description: string | null;
+  version: string;
+  phases: string[];
+  hasConfigSchema: boolean;
+  configDescriptor: ConfigObjectDescriptor | null;
 }
 
 export const LLM_CLIENT_PROFILES = [
@@ -583,6 +594,11 @@ export const pluginsApi = {
 
   get: async (id: string): Promise<Plugin> => {
     const response = await fetchApi<ApiResponse<Plugin>>(`/plugins/${id}`);
+    return response.data;
+  },
+
+  listDefinitions: async (): Promise<PluginDefinitionSummary[]> => {
+    const response = await fetchApi<ApiResponse<PluginDefinitionSummary[]>>("/plugins/definitions");
     return response.data;
   },
 

@@ -5,6 +5,8 @@ import type { PluginContext, PluginDefinition } from "../types.js";
 export const LlmInboundAnthropicPlugin: PluginDefinition = {
   name: "llm-inbound-anthropic",
   version: "1.0.0",
+  displayName: "LLM Inbound Anthropic",
+  description: "Normalize Anthropic messages requests before routing.",
   priority: 719,
   phases: ["access"],
 

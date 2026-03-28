@@ -6,10 +6,10 @@ type MetricTone = "lime" | "sky" | "amber" | "rose" | "slate";
 
 const toneClasses: Record<MetricTone, string> = {
   lime: "bg-primary/12 text-primary ring-primary/14",
-  sky: "bg-sky-500/12 text-sky-600 ring-sky-500/14 dark:text-sky-400",
-  amber: "bg-amber-500/12 text-amber-600 ring-amber-500/14 dark:text-amber-400",
-  rose: "bg-rose-500/12 text-rose-600 ring-rose-500/14 dark:text-rose-400",
-  slate: "bg-slate-500/12 text-slate-700 ring-slate-500/14 dark:text-slate-300",
+  sky: "bg-chart-2/12 text-chart-2 ring-chart-2/14",
+  amber: "bg-chart-4/12 text-chart-4 ring-chart-4/14",
+  rose: "bg-chart-5/12 text-chart-5 ring-chart-5/14",
+  slate: "bg-muted text-muted-foreground ring-border",
 };
 
 export interface MetricCardProps {

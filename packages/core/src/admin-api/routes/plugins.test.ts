@@ -400,4 +400,49 @@ describe("Plugins Routes", () => {
       expect(json.error).toBeDefined();
     });
   });
+
+  describe("GET /admin/plugins/definitions", () => {
+    test("lists available plugin definitions with config descriptors", async () => {
+      const response = await ctx.app.request("/admin/plugins/definitions");
+
+      expect(response.status).toBe(200);
+      const json = await response.json();
+      expect(Array.isArray(json.data)).toBe(true);
+      expect(json.data.length).toBeGreaterThan(0);
+
+      const keyAuth = json.data.find(
+        (definition: { name: string }) => definition.name === "key-auth",
+      );
+      expect(keyAuth).toMatchObject({
+        name: "key-auth",
+        displayName: "Key Auth",
+        hasConfigSchema: true,
+      });
+      expect(keyAuth.configDescriptor.fields).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            key: "keyNames",
+            kind: "string-list",
+          }),
+        ]),
+      );
+
+      const requestTransformer = json.data.find(
+        (definition: { name: string }) => definition.name === "request-transformer",
+      );
+      expect(requestTransformer).toMatchObject({
+        name: "request-transformer",
+        displayName: "Request Transformer",
+        hasConfigSchema: false,
+      });
+      expect(requestTransformer.configDescriptor.fields).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            key: "replace",
+            kind: "object",
+          }),
+        ]),
+      );
+    });
+  });
 });

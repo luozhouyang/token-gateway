@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { StructuredObjectField } from "@/components/configs/ConfigFormRenderer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/resources/MetricCard";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -23,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { normalizeStructuredObjectInput } from "@/lib/configs/resource-config";
 import { targetsApi, upstreamsApi, type Target, type Upstream } from "@/lib/api/client";
 import { useDashboardSettings } from "@/lib/dashboard-settings";
 import {
@@ -31,10 +32,8 @@ import {
   getErrorMessage,
   joinCommaSeparated,
   parseCommaSeparatedInput,
-  parseJsonInput,
   parseOptionalNumber,
   previewJson,
-  stringifyJson,
 } from "@/lib/dashboard-utils";
 import { toast } from "sonner";
 import { Pencil, Plus, RefreshCw, Search, Server, Trash2 } from "lucide-react";
@@ -49,7 +48,7 @@ interface UpstreamFormState {
   hashOn: string;
   hashFallback: string;
   slots: string;
-  healthcheck: string;
+  healthcheck: Record<string, unknown>;
   tags: string;
 }
 
@@ -65,7 +64,7 @@ const EMPTY_UPSTREAM_FORM: UpstreamFormState = {
   hashOn: "none",
   hashFallback: "none",
   slots: "10000",
-  healthcheck: "{}",
+  healthcheck: {},
   tags: "",
 };
 
@@ -142,7 +141,7 @@ function UpstreamsPage() {
       hashOn: upstream.hashOn || "none",
       hashFallback: upstream.hashFallback || "none",
       slots: String(upstream.slots ?? 10000),
-      healthcheck: stringifyJson(upstream.healthcheck || {}),
+      healthcheck: upstream.healthcheck || {},
       tags: joinCommaSeparated(upstream.tags),
     });
     setUpstreamDialogOpen(true);
@@ -176,10 +175,7 @@ function UpstreamsPage() {
         hashOn: upstreamFormState.hashOn,
         hashFallback: upstreamFormState.hashFallback,
         slots: parseOptionalNumber(upstreamFormState.slots),
-        healthcheck: parseJsonInput<Record<string, unknown>>(
-          upstreamFormState.healthcheck,
-          "Healthcheck",
-        ),
+        healthcheck: normalizeStructuredObjectInput(upstreamFormState.healthcheck),
         tags: parseCommaSeparatedInput(upstreamFormState.tags),
       };
 
@@ -626,21 +622,17 @@ function UpstreamsPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="healthcheck">Healthcheck JSON</Label>
-              <Textarea
-                id="healthcheck"
-                value={upstreamFormState.healthcheck}
-                onChange={(event) =>
-                  setUpstreamFormState((current) => ({
-                    ...current,
-                    healthcheck: event.target.value,
-                  }))
-                }
-                className="min-h-32 font-mono"
-                placeholder='{"active": {"healthy": {"interval": 5}}}'
-              />
-            </div>
+            <StructuredObjectField
+              label="Healthcheck"
+              description="Define active or passive healthcheck settings without editing raw JSON."
+              value={upstreamFormState.healthcheck}
+              onChange={(healthcheck) =>
+                setUpstreamFormState((current) => ({
+                  ...current,
+                  healthcheck,
+                }))
+              }
+            />
 
             <div className="space-y-2">
               <Label htmlFor="upstream-tags">Tags</Label>

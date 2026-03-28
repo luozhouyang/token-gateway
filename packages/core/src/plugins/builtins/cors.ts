@@ -19,8 +19,64 @@ interface CorsConfig {
 export const CorsPlugin: PluginDefinition = {
   name: "cors",
   version: "2.0.0",
+  displayName: "CORS",
+  description: "Control cross-origin requests and preflight responses.",
   priority: 2000,
   phases: ["access", "response"],
+  configDescriptor: {
+    fields: [
+      {
+        key: "origins",
+        kind: "string-list",
+        label: "Allowed origins",
+        description: "Use * to allow all origins. Credentials will reflect the request origin.",
+        itemLabel: "Origin",
+      },
+      {
+        key: "methods",
+        kind: "string-list",
+        label: "Allowed methods",
+        description: "When empty, the runtime falls back to the default HTTP verb set.",
+        itemLabel: "Method",
+      },
+      {
+        key: "headers",
+        kind: "string-list",
+        label: "Allowed request headers",
+        description: "Leave empty to mirror Access-Control-Request-Headers.",
+        itemLabel: "Header",
+      },
+      {
+        key: "exposed_headers",
+        kind: "string-list",
+        label: "Exposed response headers",
+        itemLabel: "Header",
+      },
+      {
+        key: "credentials",
+        kind: "boolean",
+        label: "Allow credentials",
+      },
+      {
+        key: "max_age",
+        kind: "number",
+        label: "Preflight cache max age",
+        description: "Maximum number of seconds browsers may cache the preflight response.",
+        min: 0,
+      },
+      {
+        key: "private_network",
+        kind: "boolean",
+        label: "Allow private network requests",
+      },
+      {
+        key: "preflight_continue",
+        kind: "boolean",
+        label: "Continue after preflight",
+        description: "Forward the OPTIONS request upstream instead of replying directly.",
+      },
+    ],
+  },
 
   onAccess: (ctx: PluginContext): PluginHandlerResult | void => {
     const origin = ctx.clientRequest.headers.get("origin");
