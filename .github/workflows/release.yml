@@ -35,11 +35,13 @@ jobs:
       - name: Validate workspace
         run: ./node_modules/.bin/vp check
 
+      - name: Build packages
+        run: |
+          ./node_modules/.bin/vp run @minigateway/core#build
+          ./node_modules/.bin/vp run @minigateway/cli#build
+
       - name: Run tests
         run: ./node_modules/.bin/vp test
-
-      - name: Build workspace
-        run: ./node_modules/.bin/vp run build -r
 
       - name: Create version PR or publish
         uses: changesets/action@v1
