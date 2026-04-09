@@ -33,10 +33,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Validate workspace
-        run: ./node_modules/.bin/vp run check -r
+        run: ./node_modules/.bin/vp check
 
       - name: Run tests
-        run: ./node_modules/.bin/vp run test -r
+        run: ./node_modules/.bin/vp test
 
       - name: Build workspace
         run: ./node_modules/.bin/vp run build -r

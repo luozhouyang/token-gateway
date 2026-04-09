@@ -7,6 +7,7 @@ import { nitro } from "nitro/vite";
 const isTest = process.env.VITEST === "true";
 
 export default defineConfig({
+  fmt: {},
   base: "/ui/",
   resolve: {
     tsconfigPaths: true,
