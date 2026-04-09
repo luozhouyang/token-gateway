@@ -1,6 +1,6 @@
 {
   "name": "@minigateway/cli",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "API Proxy Engine CLI - A programmable API gateway based on Hono",
   "homepage": "https://github.com/luozhouyang/minigateway/tree/main/packages/cli#readme",
   "bugs": {
