@@ -1,0 +1,18 @@
+{
+  "search.label": "搜索",
+  "search.shortcutLabel": "(按 / 聚焦搜索栏)",
+  "search.resultCount": "找到 {count} 个结果",
+  "search.noResults": "没有找到结果",
+  "poweredBy.label": "由 {name} 提供支持",
+  "poweredBy.starlight.label": "Starlight 提供支持",
+  "next.label": "下一页",
+  "previous.label": "上一页",
+  "404.title": "页面未找到",
+  "404.content": "此页面不存在。",
+  "404.backLink": "返回首页",
+  "lastUpdated.label": "最后更新：",
+  "editLink.label": "编辑此页",
+  "tableOfContents.onThisPage": "本页内容",
+  "tableOfContents.overview": "概述",
+  "skipToContent.label": "跳转到内容"
+}

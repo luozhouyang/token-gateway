@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+/* Custom styles for MiniGateway docs */
+:root {
+  --sl-font-family: "Inter", system-ui, sans-serif;
+}
+
+/* Custom hero styling */
+.hero {
+  padding: 2rem 1rem;
+}

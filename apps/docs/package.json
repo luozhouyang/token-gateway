@@ -1,0 +1,29 @@
+{
+  "name": "docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --port 3001",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "deploy": "astro build && wrangler deploy"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^13.0.0",
+    "@astrojs/sitemap": "^3.5.0",
+    "@astrojs/starlight": "^0.38.0",
+    "@tailwindcss/vite": "^4.1.18",
+    "astro": "^6.0.0",
+    "sharp": "^0.34.0",
+    "tailwindcss": "^4.1.18"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "wrangler": "^4.81.0"
+  },
+  "engines": {
+    "node": "24.14.0"
+  }
+}
