@@ -1,6 +1,6 @@
 {
   "name": "@minigateway/core",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "API Proxy Engine Core - Core business logic",
   "homepage": "https://github.com/luozhouyang/minigateway/tree/main/packages/core#readme",
   "bugs": {
