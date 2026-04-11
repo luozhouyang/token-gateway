@@ -46,8 +46,9 @@ export interface RunMigrationsOptions {
 /**
  * Run database migrations using Drizzle ORM
  * The migrations folder location depends on whether we're running from source or bundled:
- * - Source: src/storage/ -> ../../drizzle
- * - Bundled: dist/storage/ -> ../drizzle
+ * - Source: src/storage/ -> ../../drizzle (at package root)
+ * - Bundled single file: dist/index.mjs -> ./drizzle (sibling in dist)
+ * - Bundled nested: dist/storage/ -> ../drizzle
  */
 export async function runMigrations(dbPath: string, options?: RunMigrationsOptions): Promise<void> {
   const client = createClient({ url: `file:${dbPath}` });
@@ -66,17 +67,33 @@ export async function runMigrations(dbPath: string, options?: RunMigrationsOptio
 }
 
 function resolveMigrationsFolder(): string {
-  let migrationsFolder = join(__dirname, "../drizzle");
-  try {
-    const stat = fs.statSync(migrationsFolder);
-    if (!stat.isDirectory()) {
-      throw new Error("Not a directory");
-    }
-  } catch {
-    migrationsFolder = join(__dirname, "../../drizzle");
+  // Try bundled location first (dist/index.mjs -> dist/drizzle)
+  let migrationsFolder = join(__dirname, "drizzle");
+  if (isDirectory(migrationsFolder)) {
+    return migrationsFolder;
   }
 
-  return migrationsFolder;
+  // Try bundled nested location (dist/storage/ -> ../drizzle)
+  migrationsFolder = join(__dirname, "../drizzle");
+  if (isDirectory(migrationsFolder)) {
+    return migrationsFolder;
+  }
+
+  // Try source location (src/storage/ -> ../../drizzle at package root)
+  migrationsFolder = join(__dirname, "../../drizzle");
+  if (isDirectory(migrationsFolder)) {
+    return migrationsFolder;
+  }
+
+  throw new Error(`Could not find drizzle migrations folder from ${__dirname}`);
+}
+
+function isDirectory(path: string): boolean {
+  try {
+    return fs.statSync(path).isDirectory();
+  } catch {
+    return false;
+  }
 }
 
 async function reconcileLegacyMigrationJournal(
